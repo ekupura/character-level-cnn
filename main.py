@@ -130,10 +130,10 @@ def train(x, y):
     for i in range(n_folds):
         print("Training on Fold: ", i + 1)
         x_t, x_val, y_t, y_val = train_test_split(x_train, y_train, test_size=0.1, random_state=0)
-        x_t, x_val = x_t[len(x_t) % batch_size:], x_val[len(x_val) % batch_size:]
-        y_t, y_val = y_t[len(y_t) % batch_size:], y_val[len(y_val) % batch_size:]
+        x_t, x_val = x_t[x_t.shape[0] % batch_size:], x_val[x_val.shape[0] % batch_size:]
+        y_t, y_val = y_t[y_t.shape[0] % batch_size:], y_val[y_val.shape[0] % batch_size:]
         results = model.fit(x_t, y_t, epochs=epochs, batch_size=batch_size, callbacks=[early_stopping, model_checkpoint]
-                            , verbose=1, validation_split=0.1)
+                            , verbose=1, validation_data=(x_val, y_val))
         print("Val Score: ", model.evaluate(x_val, y_val, batch_size=batch_size))
         print("=======" * 12, end="\n\n\n")
         model_history.append(results)
