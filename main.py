@@ -4,6 +4,7 @@ import numpy as np
 import codecs
 import re
 import simplecnn
+from sklearn.model_selection import train_test_split
 
 # global parameter
 limit_characters = 150
@@ -84,8 +85,11 @@ def main():
     restricted_dataset = character_restriction(extracted_dataset, restriction_rule=r'[^\w!?,\s]')
     characters_id_lists = texts_to_characters_id_lists(restricted_dataset['text'], conversion_rule_for_alphabet)
     labels = labels_to_onehot(restricted_dataset['label'])
+    x_train, x_test, y_train, y_test = train_test_split(characters_id_lists, labels,
+                                                        test_size=0.2, random_state=0)
     print("Start training")
-    simplecnn.train(characters_id_lists, labels)
+    simplecnn.train(x_train, y_train, limit_characters, number_of_characters)
+    simplecnn.test(x_test, y_test)
 
 
 if __name__ == '__main__':
