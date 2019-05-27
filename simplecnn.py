@@ -14,18 +14,21 @@ epochs = 1
 
 def configure(limit_characters, number_of_characters):
     # parameter
-    embedding_dimension = 50
+    embedding_dimension = 32
     filter_size = 256
     # layer
     inputs = Input(shape=(limit_characters, ))
+    # embedding
     x1 = Embedding(input_dim=number_of_characters, output_dim=embedding_dimension,
                    embeddings_initializer='uniform', mask_zero=False)(inputs)
     x2 = Reshape(target_shape=(limit_characters, embedding_dimension, 1))(x1)
+    # conv
     x3 = Conv2D(filters=filter_size, kernel_size=(3, embedding_dimension), padding='valid',
                 activation='relu',
                 data_format='channels_last')(x2)
     x4 = MaxPooling2D((limit_characters-2, 1), padding='valid')(x3)
     x5 = Dropout(0.5)(x4)
+    # fully-connected
     x6 = Reshape(target_shape=(filter_size, ))(x5)
     x7 = Dense(512, activation='relu')(x6)
     x8 = Dense(512, activation='relu')(x7)

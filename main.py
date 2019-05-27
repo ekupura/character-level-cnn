@@ -4,6 +4,7 @@ import numpy as np
 import codecs
 import re
 import simplecnn
+import exposecnn
 from sklearn.model_selection import train_test_split
 
 # global parameter
@@ -88,8 +89,8 @@ def main():
     x_train, x_test, y_train, y_test = train_test_split(characters_id_lists, labels,
                                                         test_size=0.2, random_state=0)
     print("Start training")
-    simplecnn.train(x_train, y_train, limit_characters, number_of_characters)
-    simplecnn.test(x_test, y_test)
+    exposecnn.train(x_train, y_train, limit_characters, number_of_characters)
+    exposecnn.test(x_test, y_test)
 
 
 if __name__ == '__main__':
