@@ -5,6 +5,7 @@ import codecs
 import re
 import simplecnn
 import exposecnn
+import sentimentcnn
 from sklearn.model_selection import train_test_split
 
 # global parameter
@@ -89,8 +90,8 @@ def main():
     x_train, x_test, y_train, y_test = train_test_split(characters_id_lists, labels,
                                                         test_size=0.2, random_state=0)
     print("Start training")
-    exposecnn.train(x_train, y_train, limit_characters, number_of_characters)
-    exposecnn.test(x_test, y_test)
+    sentimentcnn.train(x_train, y_train, limit_characters, number_of_characters)
+    sentimentcnn.test(x_test, y_test)
 
 
 if __name__ == '__main__':

@@ -94,6 +94,6 @@ def fit_and_evaluate(x, y, limit_characters, number_of_characters):
 
 def test(x, y):
     batch_size = 128
-    model = load_model('./model/fast_exposecnn3.h5')
+    model = load_model('./model/fast_exposecnn.h5')
     x, y = x[x.shape[0] % batch_size:], y[y.shape[0] % batch_size:]
     print("Test Score: ", model.evaluate(x, y, batch_size=batch_size))

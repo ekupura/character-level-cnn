@@ -9,13 +9,13 @@ import keras.backend.tensorflow_backend as ktf
 import numpy as np
 
 n_folds = 1
-epochs = 1
+epochs = 10
 
 
 def configure(limit_characters, number_of_characters):
     # parameter
     embedding_dimension = 32
-    filter_size = 256
+    filter_size = 1024
     # layer
     inputs = Input(shape=(limit_characters, ))
     # embedding
@@ -29,10 +29,12 @@ def configure(limit_characters, number_of_characters):
     x4 = MaxPooling2D((limit_characters-2, 1), padding='valid')(x3)
     x5 = Dropout(0.5)(x4)
     # fully-connected
-    x6 = Reshape(target_shape=(filter_size, ))(x5)
-    x7 = Dense(512, activation='relu')(x6)
-    x8 = Dense(512, activation='relu')(x7)
-    prediction = Dense(2, activation='softmax')(x8)
+    f1 = Reshape(target_shape=(filter_size, ))(x5)
+    f2 = Dense(2048, activation='relu')(f1)
+    fd2 = Dropout(0.5)(f2)
+    f3 = Dense(2048, activation='relu')(fd2)
+    fd3 = Dropout(0.5)(f3)
+    prediction = Dense(2, activation='softmax')(fd3)
     return Model(input=inputs, output=prediction)
 
 
