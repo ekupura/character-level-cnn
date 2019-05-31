@@ -1,5 +1,5 @@
 from keras.models import Model, load_model
-from keras.layers import Input, Dense, Conv2D, Dropout, MaxPooling2D, Lambda, Embedding, Reshape
+from keras.layers import Input, Dense, Conv2D, Dropout, MaxPooling2D, Lambda, Embedding, Reshape, AveragePooling2D
 from keras.layers import BatchNormalization, Concatenate
 from keras.optimizers import SGD
 from keras.callbacks import EarlyStopping, TensorBoard, ModelCheckpoint
@@ -10,7 +10,7 @@ import keras.backend.tensorflow_backend as ktf
 import numpy as np
 
 n_folds = 1
-epochs = 20
+epochs = 30
 
 
 def configure(limit_characters, number_of_characters):
@@ -29,7 +29,7 @@ def configure(limit_characters, number_of_characters):
         c = Conv2D(filters=filter_size, kernel_size=(i + 2, embedding_dimension), padding='valid',
                    activation='relu', data_format='channels_last')(x2)
         n = BatchNormalization()(c)
-        p = MaxPooling2D((limit_characters-i-1, 1), padding='valid')(n)
+        p = AveragePooling2D((limit_characters-i-1, 1), padding='valid')(n)
         d = Dropout(0.5)(p)
         r = Reshape(target_shape=(filter_size, ))(d)
         conv.append(r)
@@ -57,7 +57,7 @@ def callbacks():
     # configure callback function
     early_stopping = EarlyStopping(monitor='val_loss', patience=3, verbose=1)
     model_checkpoint = ModelCheckpoint('./model/fast_exposecnn.h5', verbose=1, save_best_only=True)
-    tensor_board = TensorBoard(log_dir='./log/expose3/', histogram_freq=0)
+    tensor_board = TensorBoard(log_dir='./log/expose/', histogram_freq=0)
     return [early_stopping, model_checkpoint, tensor_board]
 
 

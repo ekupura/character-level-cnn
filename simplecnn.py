@@ -8,8 +8,9 @@ import tensorflow as tf
 import keras.backend.tensorflow_backend as ktf
 import numpy as np
 
-n_folds = 1
-epochs = 10
+
+n_folds = 3
+epochs = 30
 
 
 def configure(limit_characters, number_of_characters):
@@ -23,10 +24,10 @@ def configure(limit_characters, number_of_characters):
                    embeddings_initializer='uniform', mask_zero=False)(inputs)
     x2 = Reshape(target_shape=(limit_characters, embedding_dimension, 1))(x1)
     # conv
-    x3 = Conv2D(filters=filter_size, kernel_size=(3, embedding_dimension), padding='valid',
+    x3 = Conv2D(filters=filter_size, kernel_size=(7, embedding_dimension), padding='valid',
                 activation='relu',
                 data_format='channels_last')(x2)
-    x4 = MaxPooling2D((limit_characters-2, 1), padding='valid')(x3)
+    x4 = MaxPooling2D((limit_characters-6, 1), padding='valid')(x3)
     x5 = Dropout(0.5)(x4)
     # fully-connected
     f1 = Reshape(target_shape=(filter_size, ))(x5)
@@ -40,18 +41,21 @@ def configure(limit_characters, number_of_characters):
 
 def callbacks():
     # configure callback function
-    early_stopping = EarlyStopping(monitor='val_loss', patience=5, verbose=1)
+    early_stopping = EarlyStopping(monitor='val_loss', patience=3, verbose=1)
     model_checkpoint = ModelCheckpoint('./model/fast_charcnn.h5', verbose=1, save_best_only=True)
-    tensor_board = TensorBoard(log_dir='./log/', histogram_freq=0)
+    tensor_board = TensorBoard(log_dir='./log/simple_7_3', histogram_freq=0)
     return [early_stopping, model_checkpoint, tensor_board]
 
 
 def train(x, y, limit_characters, number_of_characters):
+    old_session = ktf.get_session()
     session = tf.Session('')
     ktf.set_session(session)
+    ktf.set_learning_phase(1)
     for i in range(n_folds):
         print("Training on Fold: ", i + 1)
         result = fit_and_evaluate(x, y, limit_characters, number_of_characters)
+    ktf.set_session(old_session)
 
 
 def fit_and_evaluate(x, y, limit_characters, number_of_characters):
@@ -72,7 +76,7 @@ def fit_and_evaluate(x, y, limit_characters, number_of_characters):
 
     result = model.fit(x_t, y_t, epochs=epochs, batch_size=batch_size, callbacks=callbacks(),
                        verbose=1, validation_data=(x_val, y_val))
-    print("Val Score: ", model.evaluate(x_val, y_val, batch_size=batch_size))
+    # print("Val Score: ", model.evaluate(x_val, y_val, batch_size=batch_size))
     print("=======" * 12, end="\n\n\n")
     return result
 

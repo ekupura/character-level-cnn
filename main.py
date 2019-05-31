@@ -88,10 +88,10 @@ def main():
     characters_id_lists = texts_to_characters_id_lists(restricted_dataset['text'], conversion_rule_for_alphabet)
     labels = labels_to_onehot(restricted_dataset['label'])
     x_train, x_test, y_train, y_test = train_test_split(characters_id_lists, labels,
-                                                        test_size=0.2, random_state=0)
+                                                        test_size=0.2, random_state=183)
     print("Start training")
-    sentimentcnn.train(x_train, y_train, limit_characters, number_of_characters)
-    sentimentcnn.test(x_test, y_test)
+    exposecnn.train(x_train, y_train, limit_characters, number_of_characters)
+    exposecnn.test(x_test, y_test)
 
 
 if __name__ == '__main__':
