@@ -7,6 +7,7 @@ import simplecnn
 import exposecnn
 import sentimentcnn
 from sklearn.model_selection import train_test_split
+import yaml
 
 # global parameter
 limit_characters = 150
@@ -89,9 +90,14 @@ def main():
     labels = labels_to_onehot(restricted_dataset['label'])
     x_train, x_test, y_train, y_test = train_test_split(characters_id_lists, labels,
                                                         test_size=0.2, random_state=183)
+    print("Load configuration")
+    f = open("./experiment/simple_9/configuration.yml", 'r')
+    configuration = yaml.load(f)
+    f.close()
+
     print("Start training")
-    exposecnn.train(x_train, y_train, limit_characters, number_of_characters)
-    exposecnn.test(x_test, y_test)
+    simplecnn.train(x_train, y_train, limit_characters, number_of_characters, configuration)
+    simplecnn.test(x_test, y_test, configuration)
 
 
 if __name__ == '__main__':

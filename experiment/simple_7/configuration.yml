@@ -1,0 +1,13 @@
+experiment_name: "simple_7"
+paths:
+  model_path: "./experiment/simple_7/simple_fast.h5"
+  log_dir_path: "./experiment/simple_7/log/"
+model_parameters:
+  embedding_dimension: 32
+  convolution_width: 7
+  filter_size: 1024
+  dense_size: 2048
+train_parameters:
+  batch_size: 128
+  epochs: 30
+  n_folds: 1
