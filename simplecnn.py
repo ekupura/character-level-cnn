@@ -33,7 +33,7 @@ def configure(limit_characters, number_of_characters, param):
     fd2 = Dropout(0.5)(f2)
     f3 = Dense(dense_size, activation='relu')(fd2)
     fd3 = Dropout(0.5)(f3)
-    prediction = Dense(2, activation='softmax')(fd3)
+    prediction = Dense(2, activation='softmax', name='preds')(fd3)
     return Model(input=inputs, output=prediction)
 
 
@@ -45,21 +45,23 @@ def callbacks(paths):
     return [early_stopping, model_checkpoint, tensor_board]
 
 
-def train(x, y, limit_characters, number_of_characters, conf):
+def train(x, y, conf):
     old_session = ktf.get_session()
     session = tf.Session('')
     ktf.set_session(session)
     ktf.set_learning_phase(1)
     for i in range(conf["train_parameters"]["n_folds"]):
         print("Training on Fold: ", i + 1)
-        result = fit_and_evaluate(x, y, limit_characters, number_of_characters, conf)
+        result = fit_and_evaluate(x, y, conf)
     ktf.set_session(old_session)
 
 
-def fit_and_evaluate(x, y, limit_characters, number_of_characters, conf):
+def fit_and_evaluate(x, y, conf):
     # parameter
     batch_size = conf["train_parameters"]["batch_size"]
     epochs = conf["train_parameters"]["epochs"]
+    pre_param = conf["preprocessing_parameters"]
+    limit_characters, number_of_characters = pre_param["limit_characters"], pre_param["number_of_characters"]
 
     # generate model
     model = configure(limit_characters, number_of_characters, conf["model_parameters"])
@@ -86,3 +88,4 @@ def test(x, y, conf):
     model = load_model(conf["paths"]["model_path"])
     x, y = x[x.shape[0] % batch_size:], y[y.shape[0] % batch_size:]
     print("Test Score: ", model.evaluate(x, y, batch_size=batch_size))
+
