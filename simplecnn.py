@@ -1,6 +1,6 @@
 from keras.models import Model, load_model
-from keras.layers import Input, Dense, Conv2D, Dropout, MaxPooling2D, Lambda, Embedding, Reshape
-from keras.optimizers import SGD
+from keras.layers import Input, Dense, Conv2D, Dropout, MaxPooling2D, Lambda, Embedding, Reshape, Activation, Flatten
+from keras.optimizers import SGD, Adam
 from keras.callbacks import EarlyStopping, TensorBoard, ModelCheckpoint
 import keras.backend as K
 from sklearn.model_selection import train_test_split
@@ -17,23 +17,25 @@ def configure(limit_characters, number_of_characters, param):
     dense_size = param["dense_size"]
 
     # layer
-    inputs = Input(shape=(limit_characters, ))
+    inputs = Input(shape=(1, limit_characters))
     # embedding
     x1 = Embedding(input_dim=number_of_characters, output_dim=embedding_dimension,
-                   embeddings_initializer='uniform', mask_zero=False)(inputs)
-    x2 = Reshape(target_shape=(limit_characters, embedding_dimension, 1))(x1)
+                   embeddings_initializer='uniform', mask_zero=False, name='embedding')(inputs)
+    #x2 = Reshape(target_shape=(limit_characters, embedding_dimension, 1))(x1)
     # conv
     x3 = Conv2D(filters=filter_size, kernel_size=(convolution_width, embedding_dimension), padding='valid',
-                activation='relu', data_format='channels_last')(x2)
-    x4 = MaxPooling2D((limit_characters - convolution_width + 1, 1), padding='valid')(x3)
+                activation='relu', data_format='channels_first', name='conv')(x1)
+    x4 = MaxPooling2D((limit_characters - convolution_width + 1, 1), padding='valid', name='pooling',
+                      data_format='channels_first')(x3)
     x5 = Dropout(0.5)(x4)
     # fully-connected
-    f1 = Reshape(target_shape=(filter_size, ))(x5)
-    f2 = Dense(dense_size, activation='relu')(f1)
+    f1 = Flatten()(x5)
+    f2 = Dense(dense_size, activation='relu', name='dense_1')(f1)
     fd2 = Dropout(0.5)(f2)
-    f3 = Dense(dense_size, activation='relu')(fd2)
+    f3 = Dense(dense_size, activation='relu', name='dense_2')(fd2)
     fd3 = Dropout(0.5)(f3)
-    prediction = Dense(2, activation='softmax', name='preds')(fd3)
+    f4 = Dense(2, activation=None, name='dense_3')(fd3)
+    prediction = Activation('softmax', name='preds')(f4)
     return Model(input=inputs, output=prediction)
 
 
@@ -68,10 +70,11 @@ def fit_and_evaluate(x, y, conf):
     for layer in model.layers:
         layer.trainable = True
     model.compile(loss='binary_crossentropy',
-                  optimizer=SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True),
+                  optimizer=Adam(),
                   metrics=['accuracy'])
     model.summary()
 
+    x = x.reshape(x.shape[0], 1, x.shape[1])
     x_t, x_val, y_t, y_val = train_test_split(x, y, test_size=0.1, random_state=0)
     x_t, x_val = x_t[x_t.shape[0] % batch_size:], x_val[x_val.shape[0] % batch_size:]
     y_t, y_val = y_t[y_t.shape[0] % batch_size:], y_val[y_val.shape[0] % batch_size:]
@@ -79,6 +82,8 @@ def fit_and_evaluate(x, y, conf):
     result = model.fit(x_t, y_t, epochs=epochs, batch_size=batch_size, callbacks=callbacks(conf["paths"]),
                        verbose=1, validation_data=(x_val, y_val))
     # print("Val Score: ", model.evaluate(x_val, y_val, batch_size=batch_size))
+    print(K.gradients(model.output, model.input))
+    model.save(conf["paths"]["model_path"])
     print("=======" * 12, end="\n\n\n")
     return result
 
@@ -86,6 +91,7 @@ def fit_and_evaluate(x, y, conf):
 def test(x, y, conf):
     batch_size = conf["train_parameters"]["batch_size"]
     model = load_model(conf["paths"]["model_path"])
+    x = x.reshape(x.shape[0], 1, x.shape[1])
     x, y = x[x.shape[0] % batch_size:], y[y.shape[0] % batch_size:]
     print("Test Score: ", model.evaluate(x, y, batch_size=batch_size))
 

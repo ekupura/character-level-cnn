@@ -56,8 +56,31 @@ def conversion_rule_for_alphabet(sentence):
         if number >= 0 and number <= 65:
             id_list.append(number)
         else:
-            id_list.append(65)
+            id_list.append(66)
     return id_list
+
+
+def id_list_to_characters(id_list):
+    sentence = ''
+    print(id_list)
+    for c in id_list:
+        if c == 0:
+            sentence += ' '
+        elif c < 27:
+            sentence += (chr(c + 96))
+        elif c < 53:
+            sentence += (chr(c + 65 - 27))
+        elif c < 63:
+            sentence += (chr(c + 48 - 53))
+        elif c == 63:
+            sentence += '?'
+        elif c == 64:
+            sentence += '!'
+        elif c == 65:
+            sentence += ','
+        else:
+            sentence += ' '
+    return sentence
 
 
 def texts_to_characters_id_lists(texts, limit_characters, conversion_rule=conversion_rule_for_alphabet):
@@ -81,3 +104,9 @@ def preprocess(file_name, limit_characters):
     characters_id_lists = texts_to_characters_id_lists(restricted_dataset['text'], limit_characters)
     labels = labels_to_onehot(restricted_dataset['label'])
     return train_test_split(characters_id_lists, labels, test_size=0.2, random_state=183)
+
+
+def search_text_by_index(file_name, index):
+    extracted_dataset = common_preprocess_sentiment140(file_name)
+    restricted_dataset = character_restriction(extracted_dataset, restriction_rule=r'[^\w!?,\s]')
+    return restricted_dataset.iloc[index]
