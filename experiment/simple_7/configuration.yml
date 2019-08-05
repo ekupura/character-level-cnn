@@ -4,6 +4,7 @@ paths:
   preprocessed_path: "./dataset/sentiment140.pkl"
   model_path: "./experiment/simple_7/simple_fast.h5"
   log_dir_path: "./experiment/simple_7/log/"
+  saliency_path: "./experiment/simple_7/saliency.png"
 preprocessing_parameters:
   limit_characters: 150
   number_of_characters: 67
@@ -14,5 +15,5 @@ model_parameters:
   dense_size: 2048
 train_parameters:
   batch_size: 128
-  epochs: 3
+  epochs: 20
   n_folds: 1

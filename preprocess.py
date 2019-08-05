@@ -62,7 +62,6 @@ def conversion_rule_for_alphabet(sentence):
 
 def id_list_to_characters(id_list):
     sentence = ''
-    print(id_list)
     for c in id_list:
         if c == 0:
             sentence += ' '

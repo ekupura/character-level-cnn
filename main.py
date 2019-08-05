@@ -3,7 +3,7 @@ import yaml
 import pickle
 import preprocess
 import simplecnn
-from saliency import saliency, saliency_to_png
+from saliency import saliency, saliency_to_png, generate_heatmap
 
 
 class Main(object):
@@ -17,7 +17,6 @@ class Main(object):
 
     def saliency_test(self, configuration_path):
         configuration = self._load_configuration(configuration_path)
-        model = self._load_trained_model(configuration)
         dataset = self._load_preprocessed_dataset(configuration)
         test_text = dataset['x_test'][10]
         test_label = dataset['y_test'][10]
@@ -25,6 +24,15 @@ class Main(object):
         saliency_to_png(sali)
         text = preprocess.id_list_to_characters(test_text)
         print(text)
+
+    def generate_saliency_heatmap(self, configuration_path):
+        configuration = self._load_configuration(configuration_path)
+        dataset = self._load_preprocessed_dataset(configuration)
+        sample_text = dataset['x_train'][100]
+        sample_label = dataset['y_train'][100]
+        text = preprocess.id_list_to_characters(sample_text)
+        saliency_vector = saliency(configuration, sample_text, sample_label)
+        generate_heatmap(configuration, saliency_vector, text)
 
     def _load_configuration(self, configuration_path):
         print("Load configuration")

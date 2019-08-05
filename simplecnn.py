@@ -2,11 +2,13 @@ from keras.models import Model, load_model
 from keras.layers import Input, Dense, Conv2D, Dropout, MaxPooling2D, Lambda, Embedding, Reshape, Activation, Flatten
 from keras.optimizers import SGD, Adam
 from keras.callbacks import EarlyStopping, TensorBoard, ModelCheckpoint
+from keras.utils import np_utils
 import keras.backend as K
 from sklearn.model_selection import train_test_split
 import tensorflow as tf
 import keras.backend.tensorflow_backend as ktf
 import numpy as np
+from layer import CharacterEmbeddingLayer
 
 
 def configure(limit_characters, number_of_characters, param):
@@ -17,10 +19,11 @@ def configure(limit_characters, number_of_characters, param):
     dense_size = param["dense_size"]
 
     # layer
-    inputs = Input(shape=(1, limit_characters))
+    inputs = Input(shape=(1, limit_characters, number_of_characters))
     # embedding
-    x1 = Embedding(input_dim=number_of_characters, output_dim=embedding_dimension,
-                   embeddings_initializer='uniform', mask_zero=False, name='embedding')(inputs)
+    #x1 = Embedding(input_dim=number_of_characters, output_dim=embedding_dimension,
+    #              embeddings_initializer='uniform', mask_zero=False, name='embedding')(inputs)
+    x1 = CharacterEmbeddingLayer(embedding_dimension, name='embedding')(inputs)
     #x2 = Reshape(target_shape=(limit_characters, embedding_dimension, 1))(x1)
     # conv
     x3 = Conv2D(filters=filter_size, kernel_size=(convolution_width, embedding_dimension), padding='valid',
@@ -64,19 +67,20 @@ def fit_and_evaluate(x, y, conf):
     epochs = conf["train_parameters"]["epochs"]
     pre_param = conf["preprocessing_parameters"]
     limit_characters, number_of_characters = pre_param["limit_characters"], pre_param["number_of_characters"]
-
+    print(x.shape)
     # generate model
     model = configure(limit_characters, number_of_characters, conf["model_parameters"])
     for layer in model.layers:
         layer.trainable = True
     model.compile(loss='binary_crossentropy',
-                  optimizer=Adam(),
+                  optimizer=SGD(lr=0.01, decay=1e-4, momentum=0.9),
                   metrics=['accuracy'])
     model.summary()
 
     x = x.reshape(x.shape[0], 1, x.shape[1])
     x_t, x_val, y_t, y_val = train_test_split(x, y, test_size=0.1, random_state=0)
     x_t, x_val = x_t[x_t.shape[0] % batch_size:], x_val[x_val.shape[0] % batch_size:]
+    x_t, x_val = np_utils.to_categorical(x_t), np_utils.to_categorical(x_val)
     y_t, y_val = y_t[y_t.shape[0] % batch_size:], y_val[y_val.shape[0] % batch_size:]
 
     result = model.fit(x_t, y_t, epochs=epochs, batch_size=batch_size, callbacks=callbacks(conf["paths"]),
