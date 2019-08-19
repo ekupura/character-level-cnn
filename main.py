@@ -4,6 +4,7 @@ import pickle
 import preprocess
 import simplecnn
 from saliency import calculate_saliency, generate_heatmap
+from evaluation import Evaluation
 
 
 class Main(object):
@@ -23,6 +24,11 @@ class Main(object):
         text = preprocess.id_list_to_characters(sample_text)
         saliency_vector = calculate_saliency(configuration, sample_text, sample_label)
         generate_heatmap(configuration, saliency_vector, text)
+
+    def test_evaluation(self, configuration_path):
+        configuration = self._load_configuration(configuration_path)
+        evaluation = Evaluation()
+        evaluation.single_keyword_evaluation(configuration)
 
     def _load_configuration(self, configuration_path):
         print("Load configuration")

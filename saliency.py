@@ -28,11 +28,10 @@ def calculate_saliency(conf, sample, label):
     #return matrix.reshape(150, 67)
 
 
-def generate_heatmap(conf, saliency, text):
+def generate_heatmap(conf, saliency, text, path=None):
     saliency[saliency < 0.0] = 0.0
     saliency = zscore(saliency.reshape(15, 10))
     #saliency = np.array([saliency for n in saliency])
-    print(saliency.shape)
 
     plt.figure(figsize=(7, 5))
     plt.imshow(saliency, interpolation='nearest', cmap='jet')
@@ -42,7 +41,9 @@ def generate_heatmap(conf, saliency, text):
         plt.text(x, y, c, horizontalalignment='center', verticalalignment='center', )
 
     plt.colorbar()
-    plt.savefig(conf['paths']['saliency_path'])
+    if path is None:
+        path = conf['paths']['saliency_path']
+    plt.savefig(path)
 
 
 # min max normalization

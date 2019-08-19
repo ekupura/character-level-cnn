@@ -5,6 +5,7 @@ paths:
   model_path: "./experiment/simple_7/simple_fast.h5"
   log_dir_path: "./experiment/simple_7/log/"
   saliency_path: "./experiment/simple_7/saliency.png"
+  saliency_dir_path: "./experiment/simple_7/saliency/"
 preprocessing_parameters:
   limit_characters: 150
   number_of_characters: 67
