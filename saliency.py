@@ -1,15 +1,14 @@
 from keras.models import load_model, Model
 from keras import backend as K
-from vis.visualization import visualize_saliency
 from vis.utils import utils
 from keras import activations
-from PIL import Image
 import numpy as np
 from layer import CharacterEmbeddingLayer
 from keras.utils import np_utils
 from matplotlib import pyplot as plt
 
-def saliency(conf, sample, label):
+
+def calculate_saliency(conf, sample, label):
     path = conf["paths"]["model_path"]
     layer_dict = {'CharacterEmbeddingLayer': CharacterEmbeddingLayer}
     original_model = load_model(path, custom_objects=layer_dict)
@@ -46,23 +45,13 @@ def generate_heatmap(conf, saliency, text):
     plt.savefig(conf['paths']['saliency_path'])
 
 
+# min max normalization
 def min_max(x, axis=None):
     _max = np.max(x)
     _min = np.min(x)
     return (x - _min) / (_max - _min)
 
-
-def saliency_to_png(saliency):
-    saliency[saliency < 0.0] = 0.0
-    mat = min_max(saliency)
-    m = np.mean(mat, axis=1)
-    """
-    
-    img = Image.fromarray(min_max(m), 'L')
-    img.save('saliency.png')
-    """
-    print(list(m))
-
+# z-score normalization
 def zscore(x, axis = None):
     xmean = x.mean(axis=axis, keepdims=True)
     xstd  = np.std(x, axis=axis, keepdims=True)

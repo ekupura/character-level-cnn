@@ -60,6 +60,33 @@ def conversion_rule_for_alphabet(sentence):
     return id_list
 
 
+def texts_to_characters_id_lists(texts, limit_characters, conversion_rule=conversion_rule_for_alphabet):
+    characters_id_lists = []
+    for sentence in texts:
+        id_list = conversion_rule_for_alphabet(sentence)
+        id_list = id_list + [0 for i in range(limit_characters - len(id_list))]
+        characters_id_lists.append(id_list)
+
+    return np.array(characters_id_lists)
+
+
+def labels_to_onehot(labels):
+    return np_utils.to_categorical(labels)
+
+
+# ----------------------------------------------------------------------------------------------------------------------
+
+# main method
+def preprocess(file_name, limit_characters):
+    extracted_dataset = common_preprocess_sentiment140(file_name)
+    #[0-9a-zA-Z_!?,space] 66 characters
+    restricted_dataset = character_restriction(extracted_dataset, restriction_rule=r'[^\w!?,\s]')
+    characters_id_lists = texts_to_characters_id_lists(restricted_dataset['text'], limit_characters)
+    labels = labels_to_onehot(restricted_dataset['label'])
+    return train_test_split(characters_id_lists, labels, test_size=0.2, random_state=183)
+
+
+# convert [1,2,3] -> ['abc']
 def id_list_to_characters(id_list):
     sentence = ''
     for c in id_list:
@@ -80,32 +107,3 @@ def id_list_to_characters(id_list):
         else:
             sentence += ' '
     return sentence
-
-
-def texts_to_characters_id_lists(texts, limit_characters, conversion_rule=conversion_rule_for_alphabet):
-    characters_id_lists = []
-    for sentence in texts:
-        id_list = conversion_rule_for_alphabet(sentence)
-        id_list = id_list + [0 for i in range(limit_characters - len(id_list))]
-        characters_id_lists.append(id_list)
-
-    return np.array(characters_id_lists)
-
-
-def labels_to_onehot(labels):
-    return np_utils.to_categorical(labels)
-
-
-def preprocess(file_name, limit_characters):
-    extracted_dataset = common_preprocess_sentiment140(file_name)
-    #[0-9a-zA-Z_!?,space] 66 characters
-    restricted_dataset = character_restriction(extracted_dataset, restriction_rule=r'[^\w!?,\s]')
-    characters_id_lists = texts_to_characters_id_lists(restricted_dataset['text'], limit_characters)
-    labels = labels_to_onehot(restricted_dataset['label'])
-    return train_test_split(characters_id_lists, labels, test_size=0.2, random_state=183)
-
-
-def search_text_by_index(file_name, index):
-    extracted_dataset = common_preprocess_sentiment140(file_name)
-    restricted_dataset = character_restriction(extracted_dataset, restriction_rule=r'[^\w!?,\s]')
-    return restricted_dataset.iloc[index]
