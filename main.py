@@ -21,9 +21,8 @@ class Main(object):
         dataset = self._load_preprocessed_dataset(configuration)
         sample_text = dataset['x_train'][100]
         sample_label = dataset['y_train'][100]
-        text = preprocess.id_list_to_characters(sample_text)
         saliency_vector = calculate_saliency(configuration, sample_text, sample_label)
-        generate_heatmap(configuration, saliency_vector, text)
+        generate_heatmap(configuration, saliency_vector, sample_text, sample_label)
 
     def test_evaluation(self, configuration_path):
         configuration = self._load_configuration(configuration_path)

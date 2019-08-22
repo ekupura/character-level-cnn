@@ -53,26 +53,28 @@ class Evaluation:
                     if key == other_key:
                         continue
                     other_index_set = set(index[other_key])
-                    key_index_set = key_index_set ^ other_index_set
+                    key_index_set = key_index_set - other_index_set
                 return_index[key] = list(key_index_set)
             return return_index
 
         single_train_index = exclusion(train_index)
         single_test_index = exclusion(test_index)
 
-        def generate_saliency_heatmap(index, x, y):
+        def sample_text_to_saliency_heatmap(index, x, y, max_heatmap=10):
             dir_root_path = configuration['paths']['saliency_dir_path']
             for key in keywords:
                 keyword_dir = dir_root_path + key + '/'
                 if not os.path.exists(keyword_dir):
                     os.mkdir(keyword_dir)
-                for i, v in tqdm(enumerate(index[key])):
-                    sample_text = id_list_to_characters(x[v])
+                print("key = {}".format(key))
+                for i, v in enumerate(index[key]):
+                    if i == max_heatmap:
+                        break
                     saliency = calculate_saliency(configuration, x[v], y[v])
-                    generate_heatmap(configuration, saliency, sample_text, keyword_dir + str(i) + '.png')
+                    generate_heatmap(configuration, saliency, x[v], y[v], key, keyword_dir + str(i) + '.png')
 
-        generate_saliency_heatmap(single_train_index, dataset['x_train'], dataset['y_train'])
-        generate_saliency_heatmap(single_test_index, dataset['x_test'], dataset['y_test'])
+        sample_text_to_saliency_heatmap(single_train_index, dataset['x_train'], dataset['y_train'])
+        sample_text_to_saliency_heatmap(single_test_index, dataset['x_test'], dataset['y_test'])
 
     def _get_index(self, dataset, keywords):
         index = defaultdict(list)
