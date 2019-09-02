@@ -5,6 +5,7 @@ import preprocess
 import simplecnn
 from saliency import calculate_saliency, generate_heatmap
 from evaluation import Evaluation
+from architecture import simple, two_convolution
 
 
 class Main(object):
@@ -14,7 +15,7 @@ class Main(object):
     def preprocess_and_train(self, configuration_path):
         configuration = self._load_configuration(configuration_path)
         self._do_and_dump_preprocess(configuration)
-        self._train_and_dump_modal(configuration)
+        self._train_and_dump_modal(configuration, two_convolution)
 
     def generate_saliency_heatmap(self, configuration_path):
         configuration = self._load_configuration(configuration_path)
@@ -53,11 +54,11 @@ class Main(object):
             pickle.dump({'x_train': x_train, 'x_test': x_test, 'y_train': y_train, 'y_test': y_test}, f)
 
     # train
-    def _train_and_dump_modal(self, configuration):
+    def _train_and_dump_modal(self, configuration, architecture=simple):
         print("Start training")
         with open(configuration["paths"]["preprocessed_path"], "rb") as f:
             dataset = pickle.load(f)
-        simplecnn.train(dataset['x_train'], dataset['y_train'], configuration)
+        simplecnn.train(dataset['x_train'], dataset['y_train'], configuration, architecture)
 
 
 if __name__ == '__main__':
