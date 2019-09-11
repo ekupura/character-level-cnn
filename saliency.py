@@ -1,6 +1,7 @@
 from keras.models import load_model, Model
 from keras import backend as K
 from vis.utils import utils
+from vis.visualization import visualize_saliency
 from keras import activations
 import numpy as np
 from keras.utils import np_utils
@@ -10,28 +11,47 @@ from layer import CharacterEmbeddingLayer
 from preprocess import id_list_to_characters
 
 
+class GradientSaliency:
+    def __init__(self, model, label):
+        # Define the function to compute the gradient
+        layer_idx = utils.find_layer_idx(model, 'final')
+        output_index = int(label[1])
+        print(output_index)
+        input_tensors = [model.input]
+        gradients = model.optimizer.get_gradients(model.output[0][output_index], model.input)
+        self.compute_gradients = K.function(inputs=input_tensors, outputs=gradients)
+
+    def get_mask(self, sample):
+        # Execute the function to compute the gradient
+        sample = np_utils.to_categorical(sample)
+        x_value = sample.reshape(1, 1, 150, 67)
+        gradients = self.compute_gradients([x_value])[0][0]
+
+        return gradients
+
+
 def calculate_saliency(conf, sample, label):
     path = conf["paths"]["model_path"]
     layer_dict = {'CharacterEmbeddingLayer': CharacterEmbeddingLayer}
-    original_model = load_model(path, custom_objects=layer_dict)
-    sample = np_utils.to_categorical(sample)
+    model = load_model(path, custom_objects=layer_dict)
 
-    layer_idx = utils.find_layer_idx(original_model, 'preds')
-    original_model.layers[layer_idx].activation = activations.linear
-
-    K.set_learning_phase(0)
-    input_tensors = [original_model.input]
-    gradients = original_model.optimizer.get_gradients(original_model.output[0][int(label[1])], original_model.layers[1].input)
-    compute_gradients = K.function(inputs=input_tensors, outputs=gradients)
-    try:
-        matrix = compute_gradients([sample.reshape(1, 1, 150, 67)])[0][0]
-    except:
-        matrix = np.zeros((1, 1, 150, 67))
+    saliency = GradientSaliency(model, label)
+    matrix = saliency.get_mask(sample)
 
     return np.mean((matrix.reshape(150, 67)), axis=1)
-    #return zscore(matrix.reshape(150, 67))
-    #return matrix.reshape(150, 67)
 
+def calculate_saliency_with_vis(conf, sample, label):
+    path = conf["paths"]["model_path"]
+    layer_dict = {'CharacterEmbeddingLayer': CharacterEmbeddingLayer}
+    model = load_model(path, custom_objects=layer_dict)
+
+    layer_idx = utils.find_layer_idx(model, 'preds')
+    class_idx = [int(label[1])]
+    sample = np_utils.to_categorical(sample)
+    x_value = sample.reshape(1, 150, 67)
+    grads = visualize_saliency(model, layer_idx, filter_indices=class_idx, seed_input=x_value)
+
+    return np.mean((grads.reshape(150, 67)), axis=1)
 
 def generate_heatmap(conf, saliency, id_list, label, keyword='None', path=None, z_norm=False):
     # preprocess

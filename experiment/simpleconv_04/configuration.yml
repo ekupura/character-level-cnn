@@ -1,0 +1,21 @@
+experiment_name: "simpleconv_04"
+paths:
+  dataset_path: "./dataset/sentiment140.csv"
+  preprocessed_path: "./dataset/sentiment140.pkl"
+  model_path: "./experiment/simpleconv_04/simple_fast.h5"
+  log_dir_path: "./experiment/simpleconv_04/log/"
+  saliency_path: "./experiment/simpleconv_04/saliency.png"
+  saliency_dir_path: "./experiment/simpleconv_04/saliency/"
+preprocessing_parameters:
+  limit_characters: 150
+  number_of_characters: 67
+model_parameters:
+  embedding_dimension: 32
+  dense_size: 2048
+  1st_layer:
+    convolution_width: 9
+    filter_size: 1024
+train_parameters:
+  batch_size: 128
+  epochs: 30
+  n_folds: 1

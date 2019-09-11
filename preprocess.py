@@ -11,6 +11,8 @@ def common_preprocess_sentiment140(input_name):
         df = pd.read_csv(file, header=None)
         labels, texts = [], []
         for l, t in zip(df[0], df[5]):
+            if l == 2:
+                continue
             re_text = re.sub(r'(https?://+\S*\s*|www.\S*\s*|#\S*\s*|@\S*\s*|&\S*\s*)', '', t).strip()
             if not re_text:
                 continue

@@ -3,9 +3,10 @@ import yaml
 import pickle
 import preprocess
 import simplecnn
-from saliency import calculate_saliency, generate_heatmap
+from saliency import calculate_saliency, generate_heatmap, calculate_saliency_with_vis
 from evaluation import Evaluation
 from architecture import simple, two_convolution
+from layer import CharacterEmbeddingLayer
 
 
 class Main(object):
@@ -17,18 +18,34 @@ class Main(object):
         self._do_and_dump_preprocess(configuration)
         self._train_and_dump_modal(configuration, two_convolution)
 
+    def preprocess_and_train_simple(self, configuration_path):
+        configuration = self._load_configuration(configuration_path)
+        self._do_and_dump_preprocess(configuration)
+        self._train_and_dump_modal(configuration, simple)
+
     def generate_saliency_heatmap(self, configuration_path):
         configuration = self._load_configuration(configuration_path)
         dataset = self._load_preprocessed_dataset(configuration)
-        sample_text = dataset['x_train'][100]
-        sample_label = dataset['y_train'][100]
-        saliency_vector = calculate_saliency(configuration, sample_text, sample_label)
+        sample_text = dataset['x_train'][111]
+        sample_label = dataset['y_train'][111]
+        """
+        layer_dict = {'CharacterEmbeddingLayer': CharacterEmbeddingLayer}
+        model =  load_model(configuration['paths']['model_path'], custom_objects=layer_dict)
+        sample_predict = model.predict(sample_text)
+        print(sample_predict)
+        """
+        saliency_vector = calculate_saliency_with_vis(configuration, sample_text, sample_label)
         generate_heatmap(configuration, saliency_vector, sample_text, sample_label)
 
     def test_evaluation(self, configuration_path):
         configuration = self._load_configuration(configuration_path)
         evaluation = Evaluation()
         evaluation.single_keyword_evaluation(configuration)
+
+    def do_simple_evaluation(self, configuration_path):
+        configuration = self._load_configuration(configuration_path)
+        evaluation = Evaluation()
+        evaluation.good_and_bad_evaluation(configuration)
 
     def _load_configuration(self, configuration_path):
         print("Load configuration")

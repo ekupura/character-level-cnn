@@ -8,6 +8,7 @@ from sklearn.model_selection import train_test_split
 import tensorflow as tf
 import keras.backend.tensorflow_backend as ktf
 import numpy as np
+import pickle
 from layer import CharacterEmbeddingLayer
 from architecture import simple
 
@@ -28,6 +29,10 @@ def train(x, y, conf, architecture=simple):
     for i in range(conf["train_parameters"]["n_folds"]):
         print("Training on Fold: ", i + 1)
         result = fit_and_evaluate(x, y, conf, architecture)
+        with open(conf['paths']['log_dir_path'] + 'result' + str(i) + '.pkl', 'wb') as f:
+            pickle.dump(result.history, f)
+        print(result.history)
+        print(type(result.history))
     ktf.set_session(old_session)
 
 
@@ -40,8 +45,8 @@ def fit_and_evaluate(x, y, conf, architecture=simple):
     model = architecture(conf)
     for layer in model.layers:
         layer.trainable = True
-    model.compile(loss='binary_crossentropy',
-                  optimizer=SGD(lr=0.01, decay=1e-4, momentum=0.9),
+    model.compile(loss='categorical_crossentropy',
+                  optimizer=Adam(),
                   metrics=['accuracy'])
     model.summary()
 

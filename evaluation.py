@@ -31,19 +31,23 @@ class Evaluation:
 
         return good_synonyms, bad_synonyms
 
-    def search_keyword(self, dataset):
-        good, bad = self.collect_synonyms_for_sentiment()
-        keywords = good + bad
+    def search_keyword(self, dataset, keywords):
         train_index = self._get_index(dataset['x_train'], keywords)
         test_index = self._get_index(dataset['x_test'], keywords)
-        return keywords, train_index, test_index
+        return train_index, test_index
 
-    def single_keyword_evaluation(self, configuration):
+    def single_keyword_evaluation(self, configuration, good_bad=False):
         path = configuration['paths']['preprocessed_path']
         with open(path, 'rb') as f:
             dataset = pickle.load(f)
 
-        keywords, train_index, test_index = self.search_keyword(dataset)
+        if good_bad:
+            keywords = ['good', 'bad']
+        else:
+            good, bad = self.collect_synonyms_for_sentiment()
+            keywords = good + bad
+
+        train_index, test_index = self.search_keyword(dataset, keywords)
 
         def exclusion(index):
             return_index = defaultdict(list)
@@ -74,7 +78,7 @@ class Evaluation:
                     generate_heatmap(configuration, saliency, x[v], y[v], key, keyword_dir + str(i) + '.png')
 
         sample_text_to_saliency_heatmap(single_train_index, dataset['x_train'], dataset['y_train'])
-        sample_text_to_saliency_heatmap(single_test_index, dataset['x_test'], dataset['y_test'])
+        #sample_text_to_saliency_heatmap(single_test_index, dataset['x_test'], dataset['y_test'])
 
     def _get_index(self, dataset, keywords):
         index = defaultdict(list)
@@ -86,3 +90,6 @@ class Evaluation:
                     # save text index
                     index[k].append(i)
         return index
+
+    def good_and_bad_evaluation(self, configuration):
+        self.single_keyword_evaluation(configuration, True)
