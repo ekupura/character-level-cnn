@@ -7,7 +7,7 @@ from keras.models import load_model
 from collections import defaultdict
 from tqdm import tqdm
 from preprocess import id_list_to_characters
-from saliency import calculate_saliency, generate_heatmap
+from saliency import calculate_saliency_with_vis, generate_heatmap
 
 
 class Evaluation:
@@ -42,7 +42,7 @@ class Evaluation:
             dataset = pickle.load(f)
 
         if good_bad:
-            keywords = ['good', 'bad']
+            keywords = ['good', 'comfortable', 'beautiful']
         else:
             good, bad = self.collect_synonyms_for_sentiment()
             keywords = good + bad
@@ -61,7 +61,7 @@ class Evaluation:
                 return_index[key] = list(key_index_set)
             return return_index
 
-        single_train_index = exclusion(train_index)
+        #single_train_index = exclusion(train_index)
         single_test_index = exclusion(test_index)
 
         def sample_text_to_saliency_heatmap(index, x, y, max_heatmap=10):
@@ -74,11 +74,11 @@ class Evaluation:
                 for i, v in enumerate(index[key]):
                     if i == max_heatmap:
                         break
-                    saliency = calculate_saliency(configuration, x[v], y[v])
+                    saliency = calculate_saliency_with_vis(configuration, x[v], y[v])
                     generate_heatmap(configuration, saliency, x[v], y[v], key, keyword_dir + str(i) + '.png')
 
-        sample_text_to_saliency_heatmap(single_train_index, dataset['x_train'], dataset['y_train'])
-        #sample_text_to_saliency_heatmap(single_test_index, dataset['x_test'], dataset['y_test'])
+        #sample_text_to_saliency_heatmap(single_train_index, dataset['x_train'], dataset['y_train'])
+        sample_text_to_saliency_heatmap(single_test_index, dataset['x_test'], dataset['y_test'])
 
     def _get_index(self, dataset, keywords):
         index = defaultdict(list)

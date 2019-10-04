@@ -50,11 +50,11 @@ def fit_and_evaluate(x, y, conf, architecture=simple):
                   metrics=['accuracy'])
     model.summary()
 
-    x = x.reshape(x.shape[0], 1, x.shape[1])
     x_t, x_val, y_t, y_val = train_test_split(x, y, test_size=0.1, random_state=0)
     x_t, x_val = x_t[x_t.shape[0] % batch_size:], x_val[x_val.shape[0] % batch_size:]
     x_t, x_val = np_utils.to_categorical(x_t), np_utils.to_categorical(x_val)
     y_t, y_val = y_t[y_t.shape[0] % batch_size:], y_val[y_val.shape[0] % batch_size:]
+    x_t, x_val = x_t.reshape(*x_t.shape, 1), x_val.reshape(*x_val.shape, 1)
 
     result = model.fit(x_t, y_t, epochs=epochs, batch_size=batch_size, callbacks=callbacks(conf["paths"]),
                        verbose=1, validation_data=(x_val, y_val))

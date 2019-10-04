@@ -1,11 +1,11 @@
-experiment_name: "simpleconv_02"
+experiment_name: "twoconv"
 paths:
   dataset_path: "./dataset/sentiment140.csv"
   preprocessed_path: "./dataset/sentiment140.pkl"
-  model_path: "./experiment/simpleconv_02/simple_fast.h5"
-  log_dir_path: "./experiment/simpleconv_02/log/"
-  saliency_path: "./experiment/simpleconv_02/saliency.png"
-  saliency_dir_path: "./experiment/simpleconv_02/saliency/"
+  model_path: "./experiment/twoconv_03/simple_fast.h5"
+  log_dir_path: "./experiment/twoconv_03/log/"
+  saliency_path: "./experiment/twoconv_03/saliency.png"
+  saliency_dir_path: "./experiment/twoconv_03/saliency/"
 preprocessing_parameters:
   limit_characters: 150
   number_of_characters: 67
@@ -13,6 +13,10 @@ model_parameters:
   embedding_dimension: 32
   dense_size: 2048
   1st_layer:
+    convolution_width: 5
+    filter_size: 1024
+    pooling_size: 2
+  2nd_layer:
     convolution_width: 3
     filter_size: 1024
 train_parameters:

@@ -48,7 +48,7 @@ def calculate_saliency_with_vis(conf, sample, label):
     layer_idx = utils.find_layer_idx(model, 'preds')
     class_idx = [int(label[1])]
     sample = np_utils.to_categorical(sample)
-    x_value = sample.reshape(1, 150, 67)
+    x_value = sample.reshape(150, 67, 1)
     grads = visualize_saliency(model, layer_idx, filter_indices=class_idx, seed_input=x_value)
 
     return np.mean((grads.reshape(150, 67)), axis=1)
@@ -65,20 +65,21 @@ def generate_heatmap(conf, saliency, id_list, label, keyword='None', path=None, 
     f = plt.figure(figsize=(7, 5))
 
     # configure figure elements
-    orig_cmap = matplotlib.cm.coolwarm
+    orig_cmap = matplotlib.cm.Oranges
     shifted_cmap = shiftedColorMap(orig_cmap, start=0.15, midpoint=0.5, stop=0.85, name='shifted')
     # plt.imshow(saliency, interpolation='nearest', cmap=shifted_cmap)
-    _max = np.max(saliency)
-    plt.imshow(saliency, interpolation='nearest', cmap=orig_cmap, vmax=_max, vmin=-_max)
+    _max = np.max(saliency) * 1.414
+    plt.imshow(saliency, interpolation='nearest', cmap=orig_cmap, vmax=_max, vmin=0.0)
 
     ys, xs = np.meshgrid(range(saliency.shape[0]), range(saliency.shape[1]), indexing='ij')
     for (x, y, c) in zip(xs.flatten(), ys.flatten(), text):
         plt.text(x, y, c, horizontalalignment='center', verticalalignment='center', )
 
-    label = 'positive' if label[0] == 0 else 'negative'
-    plt.title('keyword = {}, label = {}'.format(keyword, label))
+    #label = 'positive' if label[0] == 0 else 'negative'
+    #plt.title('keyword = {}, label = {}'.format(keyword, label))
+    plt.title(conf["experiment_name"])
 
-    plt.colorbar()
+    #plt.colorbar()
 
     # save figure
     if path is None:

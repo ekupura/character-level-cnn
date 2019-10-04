@@ -13,7 +13,7 @@ model_parameters:
   embedding_dimension: 32
   dense_size: 2048
   1st_layer:
-    convolution_width: 7
+    convolution_width: 9
     filter_size: 1024
 train_parameters:
   batch_size: 128
