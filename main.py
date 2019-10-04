@@ -2,7 +2,7 @@ from keras.models import load_model
 import yaml
 import pickle
 import preprocess
-import simplecnn
+import train
 from saliency import calculate_saliency, generate_heatmap, calculate_saliency_with_vis
 from evaluation import Evaluation
 from architecture import simple, two_convolution
@@ -75,7 +75,7 @@ class Main(object):
         print("Start training")
         with open(configuration["paths"]["preprocessed_path"], "rb") as f:
             dataset = pickle.load(f)
-        simplecnn.train(dataset['x_train'], dataset['y_train'], configuration, architecture)
+        train.train(dataset['x_train'], dataset['y_train'], configuration, architecture)
 
 
 if __name__ == '__main__':
