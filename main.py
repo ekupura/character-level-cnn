@@ -1,8 +1,9 @@
 from keras.models import load_model
 import yaml
 import pickle
+from copy import deepcopy
 import preprocess
-import train
+import training
 from saliency import calculate_saliency, generate_heatmap, calculate_saliency_with_vis
 from evaluation import Evaluation
 from architecture import simple, two_convolution
@@ -22,6 +23,14 @@ class Main(object):
         configuration = self._load_configuration(configuration_path)
         self._do_and_dump_preprocess(configuration)
         self._train_and_dump_modal(configuration, simple)
+
+    def preprocess_and_train_saliency(self, configuration_path):
+        configuration = self._load_configuration(configuration_path)
+        print("Start training")
+        with open(configuration["paths"]["preprocessed_path"], "rb") as f:
+            dataset = pickle.load(f)
+        training.train_with_saliency(configuration, dataset['x_train'], dataset['y_train'], simple)
+
 
     def generate_saliency_heatmap(self, configuration_path):
         configuration = self._load_configuration(configuration_path)
@@ -75,7 +84,7 @@ class Main(object):
         print("Start training")
         with open(configuration["paths"]["preprocessed_path"], "rb") as f:
             dataset = pickle.load(f)
-        train.train(dataset['x_train'], dataset['y_train'], configuration, architecture)
+        training.train(dataset['x_train'], dataset['y_train'], configuration, architecture)
 
 
 if __name__ == '__main__':
