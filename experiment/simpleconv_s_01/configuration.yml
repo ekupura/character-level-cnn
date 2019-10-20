@@ -17,5 +17,5 @@ model_parameters:
     filter_size: 1024
 train_parameters:
   batch_size: 128
-  epochs: 30
+  epochs: 20
   n_folds: 1
