@@ -22,11 +22,18 @@ def callbacks(paths):
     return [early_stopping, model_checkpoint, tensor_board]
 
 
-def train(x, y, conf, architecture=simple):
+def load_dataset(conf):
+    with open(conf["paths"]["preprocessed_path"], "rb") as f:
+        dataset = pickle.load(f)
+    return dataset['x_train'], dataset['y_train']
+
+
+def train(conf, architecture=simple):
     old_session = ktf.get_session()
     session = tf.Session('')
     ktf.set_session(session)
     ktf.set_learning_phase(1)
+    x, y = load_dataset(conf)
     for i in range(conf["train_parameters"]["n_folds"]):
         print("Training on Fold: ", i + 1)
         result = fit_and_evaluate(x, y, conf, architecture)
@@ -66,11 +73,11 @@ def fit_and_evaluate(x, y, conf, architecture=simple):
     return result
 
 
-def train_with_saliency(conf, x, y, architecture=simple):
+def train_with_saliency(conf, architecture=simple):
+    x, y = load_dataset(conf)
     # parameter
     batch_size = conf["train_parameters"]["batch_size"]
     epochs = conf["train_parameters"]["epochs"]
-    print(x.shape)
     # generate model
     model = architecture(conf)
     for layer in model.layers:

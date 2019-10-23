@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 import codecs
 import re
+import pickle
 from sklearn.model_selection import train_test_split
 
 
@@ -86,6 +87,17 @@ def preprocess(file_name, limit_characters):
     characters_id_lists = texts_to_characters_id_lists(restricted_dataset['text'], limit_characters)
     labels = labels_to_onehot(restricted_dataset['label'])
     return train_test_split(characters_id_lists, labels, test_size=0.2, random_state=183)
+
+
+# preprocess and  dump
+def preprocess_wrap(conf, dump=True):
+    paths, param = conf["paths"], conf["preprocessing_parameters"]
+    x_train, x_test, y_train, y_test = preprocess(paths["dataset_path"], param["limit_characters"])
+    if dump:
+        with open(paths["preprocessed_path"], "wb") as f:
+            pickle.dump({'x_train': x_train, 'x_test': x_test, 'y_train': y_train, 'y_test': y_test}, f)
+    else:
+        return x_train, x_test, y_train, y_test
 
 
 # convert [1,2,3] -> ['abc']
