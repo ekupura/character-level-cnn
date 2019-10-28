@@ -13,6 +13,7 @@ from layer import CharacterEmbeddingLayer
 from architecture import simple
 from callbacks import EpochSaliency, GifSaliency
 from copy import deepcopy
+import random
 
 def callbacks(paths):
     # configure callback function
@@ -73,7 +74,7 @@ def fit_and_evaluate(x, y, conf, architecture=simple):
     return result
 
 
-def train_with_saliency(conf, architecture=simple):
+def train_with_saliency(conf, architecture=simple, verbose=1):
     x, y = load_dataset(conf)
     # parameter
     batch_size = conf["train_parameters"]["batch_size"]
@@ -86,14 +87,20 @@ def train_with_saliency(conf, architecture=simple):
                   optimizer=Adam(lr=0.001, decay=0.0000),
                   metrics=['accuracy'])
     model.summary()
-    #x, y = x[:10000], y[:10000]
+    x, y = x[:10000], y[:10000]
     x_t, x_val, y_t, y_val = train_test_split(x, y, test_size=0.1, random_state=0)
-    sample = deepcopy(x_val[0])
-    label = deepcopy(y_val[0])
+
+    # random choice
+    random.seed(0)
+    indexes = random.sample(range(len(x_val)), 10)
+    sample = deepcopy(np.array(x_val)[indexes])
+    label = deepcopy(np.array(y_val)[indexes])
+
     x_t, x_val = x_t[x_t.shape[0] % batch_size:], x_val[x_val.shape[0] % batch_size:]
     x_t, x_val = np_utils.to_categorical(x_t), np_utils.to_categorical(x_val)
     y_t, y_val = y_t[y_t.shape[0] % batch_size:], y_val[y_val.shape[0] % batch_size:]
     x_t, x_val = x_t.reshape(*x_t.shape, 1), x_val.reshape(*x_val.shape, 1)
+
 
     epoch_saliency = GifSaliency(conf, sample, label)
     paths = conf["paths"]
@@ -103,7 +110,7 @@ def train_with_saliency(conf, architecture=simple):
     cb = [epoch_saliency, early_stopping, model_checkpoint, tensor_board]
 
     result = model.fit(x_t, y_t, epochs=epochs, batch_size=batch_size, callbacks=cb,
-                       verbose=1, validation_data=(x_val, y_val))
+                       verbose=verbose, validation_data=(x_val, y_val))
     model.save(conf["paths"]["model_path"])
     print("=======" * 12, end="\n\n\n")
 

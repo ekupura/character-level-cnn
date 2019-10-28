@@ -73,26 +73,26 @@ def texts_to_characters_id_lists(texts, limit_characters, conversion_rule=conver
     return np.array(characters_id_lists)
 
 
-def labels_to_onehot(labels):
-    return np_utils.to_categorical(labels)
+def labels_to_onehot(labels, number_of_characters):
+    return np_utils.to_categorical(labels, number_of_characters)
 
 
 # ----------------------------------------------------------------------------------------------------------------------
 
 # main method
-def preprocess(file_name, limit_characters):
+def preprocess(file_name, limit_characters, number_of_characters):
     extracted_dataset = common_preprocess_sentiment140(file_name)
     #[0-9a-zA-Z_!?,space] 66 characters
     restricted_dataset = character_restriction(extracted_dataset, restriction_rule=r'[^\w!?,\s]')
     characters_id_lists = texts_to_characters_id_lists(restricted_dataset['text'], limit_characters)
-    labels = labels_to_onehot(restricted_dataset['label'])
+    labels = labels_to_onehot(restricted_dataset['label'], number_of_characters)
     return train_test_split(characters_id_lists, labels, test_size=0.2, random_state=183)
 
 
 # preprocess and  dump
 def preprocess_wrap(conf, dump=True):
     paths, param = conf["paths"], conf["preprocessing_parameters"]
-    x_train, x_test, y_train, y_test = preprocess(paths["dataset_path"], param["limit_characters"])
+    x_train, x_test, y_train, y_test = preprocess(paths["dataset_path"], param["limit_characters"], param['number_of_characters'])
     if dump:
         with open(paths["preprocessed_path"], "wb") as f:
             pickle.dump({'x_train': x_train, 'x_test': x_test, 'y_train': y_train, 'y_test': y_test}, f)

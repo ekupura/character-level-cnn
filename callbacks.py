@@ -3,6 +3,7 @@ import keras
 from copy import deepcopy
 from keras.callbacks import Callback
 from keras import backend as K
+from tqdm import tqdm
 import saliency
 
 
@@ -39,28 +40,33 @@ class EpochSaliency(keras.callbacks.Callback) :
 
 
 class GifSaliency(keras.callbacks.Callback) :
-    def __init__(self, conf, sample, label):
+    def __init__(self, conf, samples, labels):
         self.conf = conf
-        self.sample = sample.copy()
-        print("init={}".format(self.sample.shape))
-        self.label = label
-        self.saliency_list = []
+        self.testset = {}
+        for i in range(len(samples)):
+            self.testset[i] = ([], samples[i], labels[i])
 
     def on_train_begin(self, logs=None):
         pass
 
     def on_train_end(self, logs=None):
-        saliency.generate_animation_heatmap(self.conf, self.saliency_list, self.sample)
+        print("generating...")
+        for case, test in tqdm(self.testset.items()):
+            sali, sample, label = test[0], test[1], test[2]
+            saliency.generate_animation_heatmap(self.conf, sali, sample, case, label)
 
-    def on_batch_begin(self, batch, logs = None) :
+    def on_batch_begin(self, batch, logs = None):
         pass
 
-    def on_batch_end(self, batch, logs = None) :
+    def on_batch_end(self, batch, logs = None):
         pass
 
     def on_epoch_begin(self, epoch, logs=None):
         pass
 
-    def on_epoch_end(self, epoch, logs = None) :
-        sali = saliency.calculate_saliency_with_vis(self.conf, self.sample, self.label, self.model)
-        self.saliency_list.append(sali)
+    def on_epoch_end(self, epoch, logs=None):
+        print("calculating...")
+        for test in tqdm(self.testset.values()):
+            sample, label = test[1], test[2]
+            sali = saliency.calculate_saliency(self.conf, sample, label, self.model)
+            test[0].append(sali)

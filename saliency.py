@@ -1,3 +1,4 @@
+import os
 from keras.models import load_model, Model
 from keras import backend as K
 from vis.utils import utils
@@ -17,24 +18,24 @@ class GradientSaliency:
         # Define the function to compute the gradient
         layer_idx = utils.find_layer_idx(model, 'final')
         output_index = int(label[1])
-        print(output_index)
         input_tensors = [model.input]
-        gradients = model.optimizer.get_gradients(model.output[0][output_index], model.input)
+        gradients = model.optimizer.get_gradients(model.layers[layer_idx].output[0][output_index], model.input)
         self.compute_gradients = K.function(inputs=input_tensors, outputs=gradients)
 
     def get_mask(self, sample):
         # Execute the function to compute the gradient
-        sample = np_utils.to_categorical(sample)
-        x_value = sample.reshape(1, 1, 150, 67)
+        sample = np_utils.to_categorical(sample, 67)
+        x_value = sample.reshape(1, 150, 67, 1)
         gradients = self.compute_gradients([x_value])[0][0]
 
         return gradients
 
 
-def calculate_saliency(conf, sample, label):
-    path = conf["paths"]["model_path"]
-    layer_dict = {'CharacterEmbeddingLayer': CharacterEmbeddingLayer}
-    model = load_model(path, custom_objects=layer_dict)
+def calculate_saliency(conf, sample, label, model=None):
+    if model is None:
+        path = conf["paths"]["model_path"]
+        layer_dict = {'CharacterEmbeddingLayer': CharacterEmbeddingLayer}
+        model = load_model(path, custom_objects=layer_dict)
 
     saliency = GradientSaliency(model, label)
     matrix = saliency.get_mask(sample)
@@ -51,7 +52,7 @@ def calculate_saliency_with_vis(conf, sample, label, model=None):
     # class_idx = [int(label[1])]
     class_idx = [int(label[1])]
 
-    sample = np_utils.to_categorical(sample)
+    sample = np_utils.to_categorical(sample, 67)
     x_value = sample.reshape(150, 67, 1)
     grads = visualize_saliency(model, layer_idx, filter_indices=class_idx, seed_input=x_value)
 
@@ -96,16 +97,21 @@ def generate_heatmap(conf, saliency, id_list, epoch=None, path=None, z_norm=Fals
     plt.close(f)
 
 
-def generate_animation_heatmap(conf, saliency_list, id_list, epoch=None, path=None, z_norm=False):
+# generate one gif image
+def generate_animation_heatmap(conf, saliency_list, id_list, case, label='', sm=False):
     # preprocess
-    saliency_list = [saliency.reshape(15, 10) for saliency in saliency_list]
+    if sm:
+        saliency_list = [softmax(saliency).reshape(15, 10) for saliency in saliency_list]
+    else:
+        saliency_list = [saliency.reshape(15, 10) for saliency in saliency_list]
     text = id_list_to_characters(id_list)
+    case = case + 1
 
     f = plt.figure(figsize=(7, 5))
 
     # configure figure elements
     orig_cmap = matplotlib.cm.Oranges
-    _max = np.max(saliency_list) * 1.414
+    _max = np.max(saliency_list) * 1.000
 
     def update(i):
         if i != 0:
@@ -116,21 +122,14 @@ def generate_animation_heatmap(conf, saliency_list, id_list, epoch=None, path=No
         for (x, y, c) in zip(xs.flatten(), ys.flatten(), text):
             plt.text(x, y, c, horizontalalignment='center', verticalalignment='center', )
         im = plt.imshow(saliency, interpolation='nearest', cmap=orig_cmap, vmax=_max, vmin=0.0)
-        plt.title("{},epoch={}".format(conf["experiment_name"], epoch))
+        plt.title("name={},case={},label={},epoch={}".format(conf["experiment_name"], case, int(label[1]), epoch))
         return [im]
 
-    """
-    for epoch, saliency in enumerate(saliency_list):
-        ys, xs = np.meshgrid(range(saliency.shape[0]), range(saliency.shape[1]), indexing='ij')
-        for (x, y, c) in zip(xs.flatten(), ys.flatten(), text):
-            plt.text(x, y, c, horizontalalignment='center', verticalalignment='center', )
-        plt.title("{},epoch={}".format(conf["experiment_name"], epoch+1))
-        im = plt.imshow(saliency, interpolation='nearest', cmap=orig_cmap, vmax=_max, vmin=0.0)
-        ims.append([im])
-    ani = animation.ArtistAnimation(f, ims, interval=200, blit=True, repeat_delay=1000)
-    """
+    gif_dir = conf['paths']['saliency_dir_path'] + 'gif/'
+    if not os.path.exists(gif_dir):
+        os.mkdir(gif_dir)
     ani = animation.FuncAnimation(f, update, frames=len(saliency_list), interval=500, blit=True)
-    ani.save('anim.gif', writer="imagemagick")
+    ani.save('{}{}.gif'.format(gif_dir, str(case).zfill(3)), writer="imagemagick")
 
     plt.close(f)
 
@@ -146,3 +145,7 @@ def zscore(x, axis = None):
     xmean = x.mean(axis=axis, keepdims=True)
     xstd  = np.std(x, axis=axis, keepdims=True)
     zscore = (x-xmean)/xstd
+
+def softmax(x):
+    f = np.exp(x)/np.sum(np.exp(x), keepdims = True)
+    return f

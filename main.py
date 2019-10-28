@@ -14,7 +14,7 @@ class Main(object):
     def __init__(self):
         pass
 
-    def train(self, conf_path, prep=False, sali=False, model='simple'):
+    def train(self, conf_path, prep=False, sali=False, model='simple', verbose=1):
         configuration = self._load_configuration(conf_path)
         # select whether to do preprocessing
         if prep:
@@ -26,7 +26,7 @@ class Main(object):
             archi = simple
         # select whether to generate saliency map
         if sali:
-            training.train_with_saliency(configuration, archi)
+            training.train_with_saliency(configuration, archi, verbose)
         else:
             training.train(configuration, archi)
 
