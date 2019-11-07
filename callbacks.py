@@ -42,17 +42,16 @@ class EpochSaliency(keras.callbacks.Callback) :
 class GifSaliency(keras.callbacks.Callback) :
     def __init__(self, conf, samples, labels):
         self.conf = conf
-        self.testset = {}
-        for i in range(len(samples)):
-            self.testset[i] = ([], samples[i], labels[i])
+        self.samples = samples
+        self.labels = labels
+        self.saliencies = [[] for i in samples]
 
     def on_train_begin(self, logs=None):
         pass
 
     def on_train_end(self, logs=None):
         print("generating...")
-        for case, test in tqdm(self.testset.items()):
-            sali, sample, label = test[0], test[1], test[2]
+        for case, (sali, sample, label) in tqdm(enumerate(zip(self.saliencies, self.samples, self.labels))):
             saliency.generate_animation_heatmap(self.conf, sali, sample, case, label)
 
     def on_batch_begin(self, batch, logs = None):
@@ -66,7 +65,6 @@ class GifSaliency(keras.callbacks.Callback) :
 
     def on_epoch_end(self, epoch, logs=None):
         print("calculating...")
-        for test in tqdm(self.testset.values()):
-            sample, label = test[1], test[2]
-            sali = saliency.calculate_saliency(self.conf, sample, label, self.model)
-            test[0].append(sali)
+        saliencies = saliency.calculate_saliency_multi(self.conf, self.samples, self.labels, self.model)
+        for i, s in enumerate(saliencies):
+            self.saliencies[i].append(s)

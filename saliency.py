@@ -11,13 +11,14 @@ import matplotlib
 from layer import CharacterEmbeddingLayer
 from preprocess import id_list_to_characters
 from matplotlib import animation
+from tqdm import tqdm
 
 
 class GradientSaliency:
     def __init__(self, model, label):
         # Define the function to compute the gradient
         layer_idx = utils.find_layer_idx(model, 'final')
-        output_index = int(label[1])
+        output_index = int(label[0])
         input_tensors = [model.input]
         gradients = model.optimizer.get_gradients(model.layers[layer_idx].output[0][output_index], model.input)
         self.compute_gradients = K.function(inputs=input_tensors, outputs=gradients)
@@ -30,6 +31,9 @@ class GradientSaliency:
 
         return gradients
 
+    def delete(self):
+        del(self.compute_gradients)
+
 
 def calculate_saliency(conf, sample, label, model=None):
     if model is None:
@@ -39,8 +43,26 @@ def calculate_saliency(conf, sample, label, model=None):
 
     saliency = GradientSaliency(model, label)
     matrix = saliency.get_mask(sample)
+    saliency.delete()
+    print("zoo")
+    #matrix = np.zeros((150,67))
+    del(saliency)
 
     return np.mean((matrix.reshape(150, 67)), axis=1)
+
+def calculate_saliency_multi(conf, samples, labels, model):
+    saliencies = {}
+    for label in np.unique(labels, axis=0):
+        idx = np.where(label == 1.0)[0][0]
+        saliencies[idx] = GradientSaliency(model, list(label))
+
+    results = []
+    for sample, label in tqdm(zip(samples, labels)):
+        idx = np.where(label == 1.0)[0][0]
+        matrix = saliencies[idx].get_mask(sample)
+        results.append(np.mean((matrix.reshape(150, 67)), axis=1))
+
+    return results
 
 def calculate_saliency_with_vis(conf, sample, label, model=None):
     if model is None:
@@ -110,18 +132,19 @@ def generate_animation_heatmap(conf, saliency_list, id_list, case, label='', sm=
     f = plt.figure(figsize=(7, 5))
 
     # configure figure elements
-    orig_cmap = matplotlib.cm.Oranges
+    orig_cmap = matplotlib.cm.coolwarm
     _max = np.max(saliency_list) * 1.000
 
     def update(i):
         if i != 0:
             plt.cla()
         saliency = saliency_list[i]
+        saliency[9][9] = 0.0
         epoch = i + 1
         ys, xs = np.meshgrid(range(saliency.shape[0]), range(saliency.shape[1]), indexing='ij')
         for (x, y, c) in zip(xs.flatten(), ys.flatten(), text):
             plt.text(x, y, c, horizontalalignment='center', verticalalignment='center', )
-        im = plt.imshow(saliency, interpolation='nearest', cmap=orig_cmap, vmax=_max, vmin=0.0)
+        im = plt.imshow(saliency, interpolation='nearest', cmap=orig_cmap, vmax=_max, vmin=-_max)
         plt.title("name={},case={},label={},epoch={}".format(conf["experiment_name"], case, int(label[1]), epoch))
         return [im]
 
