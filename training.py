@@ -87,7 +87,7 @@ def train_with_saliency(conf, architecture=simple, verbose=1):
                   optimizer=Adam(lr=0.001, decay=0.0000),
                   metrics=['accuracy'])
     model.summary()
-    x, y = x[:100000], y[:100000]
+    #x, y = x[:100000], y[:100000]
     x_t, x_val, y_t, y_val = train_test_split(x, y, test_size=0.1, random_state=0)
 
     # random choice

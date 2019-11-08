@@ -14,11 +14,11 @@ class Main(object):
     def __init__(self):
         pass
 
-    def train(self, conf_path, prep=False, sali=False, model='simple', verbose=1):
+    def train(self, conf_path, prep=False, sali=False, model='simple', aug=False, verbose=1):
         configuration = self._load_configuration(conf_path)
         # select whether to do preprocessing
         if prep:
-            preprocess.preprocess_wrap(configuration, dump=True)
+            preprocess.preprocess_wrap(configuration, dump=True, aug=aug)
         # select model architecture
         if model == 'two':
             archi = two_convolution
