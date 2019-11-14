@@ -2,7 +2,10 @@ from keras.models import Model, load_model
 from keras.layers import Input, Dense, Conv2D, Dropout, MaxPooling2D, AveragePooling2D
 from keras.layers import Lambda, Embedding, Reshape, Activation, Flatten
 from keras.layers import BatchNormalization
+from keras.utils import np_utils
 from layer import CharacterEmbeddingLayer
+import keras.backend as K
+import numpy as np
 
 
 def simple(conf):
@@ -16,8 +19,9 @@ def simple(conf):
     dense_size = model_param["dense_size"]
 
     # layer
-    inputs = Input(shape=(limit_characters, number_of_characters, 1))
-    r1 = Reshape(target_shape=(1, limit_characters, number_of_characters))(inputs)
+    inputs = Input(shape=(limit_characters, 1), dtype='int32')
+    l1 = Lambda(lambda x: K.one_hot(x, num_classes=number_of_characters))(inputs)
+    r1 = Reshape(target_shape=(1, limit_characters, number_of_characters))(l1)
     x1 = CharacterEmbeddingLayer(embedding_dimension, name='embedding')(r1)
     x2 = Reshape(target_shape=(limit_characters, embedding_dimension, 1))(x1)
     # conv
@@ -52,7 +56,8 @@ def two_convolution(conf):
 
     # layer
     inputs = Input(shape=(limit_characters, number_of_characters, 1))
-    r1 = Reshape(target_shape=(1, limit_characters, number_of_characters))(inputs)
+    l1 = Lambda(lambda x: K.one_hot(x, num_classes=number_of_characters))(inputs)
+    r1 = Reshape(target_shape=(1, limit_characters, number_of_characters))(l1)
 
     # embedding
     x1 = CharacterEmbeddingLayer(embedding_dimension, name='embedding')(r1)

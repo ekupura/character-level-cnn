@@ -97,7 +97,6 @@ def train_with_saliency(conf, architecture=simple, verbose=1):
     label = deepcopy(np.array(y_val)[indexes])
 
     x_t, x_val = x_t[x_t.shape[0] % batch_size:], x_val[x_val.shape[0] % batch_size:]
-    x_t, x_val = np_utils.to_categorical(x_t), np_utils.to_categorical(x_val)
     y_t, y_val = y_t[y_t.shape[0] % batch_size:], y_val[y_val.shape[0] % batch_size:]
     x_t, x_val = x_t.reshape(*x_t.shape, 1), x_val.reshape(*x_val.shape, 1)
 
