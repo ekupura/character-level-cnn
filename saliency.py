@@ -17,16 +17,19 @@ from tqdm import tqdm
 class GradientSaliency:
     def __init__(self, model, label):
         # Define the function to compute the gradient
-        layer_idx = utils.find_layer_idx(model, 'final')
+        out_layer_idx = utils.find_layer_idx(model, 'final')
+        in_layer_idx = utils.find_layer_idx(model, 'embedding')
         output_index = int(label[0])
         input_tensors = [model.input]
-        gradients = model.optimizer.get_gradients(model.layers[layer_idx].output[0][output_index], model.input)
+        gradients = model.optimizer.get_gradients(model.layers[out_layer_idx].output[0][output_index],
+                                                  model.layers[in_layer_idx].input)
         self.compute_gradients = K.function(inputs=input_tensors, outputs=gradients)
 
     def get_mask(self, sample):
         # Execute the function to compute the gradient
-        sample = np_utils.to_categorical(sample, 67)
-        x_value = sample.reshape(1, 150, 67, 1)
+        # sample = np_utils.to_categorical(sample, 67)
+        # x_value = sample.reshape(1, 150, 67, 1)
+        x_value = sample.reshape(1, 150, 1)
         gradients = self.compute_gradients([x_value])[0][0]
 
         return gradients
