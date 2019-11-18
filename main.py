@@ -16,6 +16,7 @@ class Main(object):
 
     def train(self, conf_path, prep=False, sali=False, model='simple', aug=False, verbose=1):
         configuration = self._load_configuration(conf_path)
+        model = configuration["model_parameters"]["architecture"]
         # select whether to do preprocessing
         if prep:
             preprocess.preprocess_wrap(configuration, dump=True, aug=aug)

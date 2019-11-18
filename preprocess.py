@@ -33,7 +33,7 @@ def common_preprocess_sentiment140(input_name):
 def lemmatize(dataset):
     labels, texts = [], []
     lemma = nltk.stem.WordNetLemmatizer()
-    for l, t in zip(dataset["label"], dataset["text"]):
+    for l, t in tqdm(zip(dataset["label"], dataset["text"])):
         words = nltk.word_tokenize(t)
         stem_text = ' '.join([lemma.lemmatize(word) for word in words])
         texts.append(stem_text)
@@ -170,12 +170,12 @@ def data_augmentation(dataset, sample_num=100000, sample_rate=None):
 # ----------------------------------------------------------------------------------------------------------------------
 
 # main method
-def preprocess(file_name, limit_characters, number_of_characters):
+def preprocess(file_name, limit_characters, number_of_characters, aug=False):
     extracted_dataset = common_preprocess_sentiment140(file_name)
     #[0-9a-zA-Z_!?,space] 66 characters
-    #lemma_dataset = lemmatize(extracted_dataset)
-    lemma_dataset = extracted_dataset
-    lemma_dataset = data_augmentation(lemma_dataset, sample_rate=2.0)
+    lemma_dataset = lemmatize(extracted_dataset)
+    if aug:
+        lemma_dataset = data_augmentation(lemma_dataset, sample_rate=4.0)
     restricted_dataset = character_restriction(lemma_dataset, restriction_rule=r'[^\w!?,\s]')
     characters_id_lists = texts_to_characters_id_lists(restricted_dataset['text'], limit_characters)
     labels = labels_to_onehot(restricted_dataset['label'])
@@ -185,7 +185,7 @@ def preprocess(file_name, limit_characters, number_of_characters):
 # preprocess and  dump
 def preprocess_wrap(conf, dump=True, aug=False):
     paths, param = conf["paths"], conf["preprocessing_parameters"]
-    x_train, x_test, y_train, y_test = preprocess(paths["dataset_path"], param["limit_characters"], param['number_of_characters'])
+    x_train, x_test, y_train, y_test = preprocess(paths["dataset_path"], param["limit_characters"], param['number_of_characters'], aug)
     if dump:
         with open(paths["preprocessed_path"], "wb") as f:
             pickle.dump({'x_train': x_train, 'x_test': x_test, 'y_train': y_train, 'y_test': y_test}, f, protocol=4)

@@ -69,7 +69,7 @@ def two_convolution(conf):
     r1 = Reshape(target_shape=(1, limit_characters - convolution_width_1st + 1, filter_size_1st))(b1)
     p1 = MaxPooling2D(pool_size=(1, pooling_size_1st), data_format='channels_first')(r1)
 
-    # 2nd-conv
+    # 2nd-conv (final conv)
     c2 = Conv2D(filters=filter_size_2nd, kernel_size=(convolution_width_2nd, filter_size_1st // pooling_size_1st),
                 padding='valid', activation='relu', data_format='channels_first', name='conv2')(p1)
     b2 = Dropout(0.5)(c2)
