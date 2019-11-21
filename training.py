@@ -26,56 +26,11 @@ def callbacks(paths):
 def load_dataset(conf):
     with open(conf["paths"]["preprocessed_path"], "rb") as f:
         dataset = pickle.load(f)
-    return dataset['x_train'], dataset['y_train']
-
-
-def train(conf, architecture=simple):
-    old_session = ktf.get_session()
-    session = tf.Session('')
-    ktf.set_session(session)
-    ktf.set_learning_phase(1)
-    x, y = load_dataset(conf)
-    for i in range(conf["train_parameters"]["n_folds"]):
-        print("Training on Fold: ", i + 1)
-        result = fit_and_evaluate(x, y, conf, architecture)
-        with open(conf['paths']['log_dir_path'] + 'result' + str(i) + '.pkl', 'wb') as f:
-            pickle.dump(result.history, f)
-        print(result.history)
-        print(type(result.history))
-    ktf.set_session(old_session)
-
-
-def fit_and_evaluate(x, y, conf, architecture=simple):
-    # parameter
-    batch_size = conf["train_parameters"]["batch_size"]
-    epochs = conf["train_parameters"]["epochs"]
-    print(x.shape)
-    # generate model
-    model = architecture(conf)
-    for layer in model.layers:
-        layer.trainable = True
-    model.compile(loss='categorical_crossentropy',
-                  optimizer=Adam(),
-                  metrics=['accuracy'])
-    model.summary()
-
-    x_t, x_val, y_t, y_val = train_test_split(x, y, test_size=0.1, random_state=0)
-    x_t, x_val = x_t[x_t.shape[0] % batch_size:], x_val[x_val.shape[0] % batch_size:]
-    x_t, x_val = np_utils.to_categorical(x_t), np_utils.to_categorical(x_val)
-    y_t, y_val = y_t[y_t.shape[0] % batch_size:], y_val[y_val.shape[0] % batch_size:]
-    x_t, x_val = x_t.reshape(*x_t.shape, 1), x_val.reshape(*x_val.shape, 1)
-
-    result = model.fit(x_t, y_t, epochs=epochs, batch_size=batch_size, callbacks=callbacks(conf["paths"]),
-                       verbose=1, validation_data=(x_val, y_val))
-    # print("Val Score: ", model.evaluate(x_val, y_val, batch_size=batch_size))
-    print(K.gradients(model.output, model.input))
-    model.save(conf["paths"]["model_path"])
-    print("=======" * 12, end="\n\n\n")
-    return result
+    return dataset['x_train'], dataset['y_train'], dataset['x_test'], dataset['y_test']
 
 
 def train_with_saliency(conf, architecture=simple, verbose=1):
-    x, y = load_dataset(conf)
+    x, y, x_test, y_test = load_dataset(conf)
     # parameter
     batch_size = conf["train_parameters"]["batch_size"]
     epochs = conf["train_parameters"]["epochs"]
@@ -111,11 +66,14 @@ def train_with_saliency(conf, architecture=simple, verbose=1):
     result = model.fit(x_t, y_t, epochs=epochs, batch_size=batch_size, callbacks=cb,
                        verbose=verbose, validation_data=(x_val, y_val))
     model.save(conf["paths"]["model_path"])
+    print(result.history)
     print("=======" * 12, end="\n\n\n")
 
     with open(conf['paths']['log_dir_path'] + 'result.pkl', 'wb') as f:
         pickle.dump(result.history, f)
-    print(result.history)
+
+    ev_result = model.evaluate(x_test, y_test, batch_size=batch_size, verbose=verbose)
+    print(ev_result)
 
 
 def test(x, y, conf):

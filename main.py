@@ -31,6 +31,7 @@ class Main(object):
         else:
             training.train(configuration, archi)
 
+
     # testing saliency map
     def generate_saliency_heatmap(self, configuration_path):
         configuration = self._load_configuration(configuration_path)
