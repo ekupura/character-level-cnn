@@ -42,12 +42,12 @@ def train_with_saliency(conf, architecture=simple, verbose=1):
                   optimizer=Adam(lr=0.001, decay=0.0000),
                   metrics=['accuracy'])
     model.summary()
-    #x, y = x[:10000], y[:10000]
-    x_t, x_val, y_t, y_val = train_test_split(x, y, test_size=0.1, random_state=0)
+    # x, y = x[:10000], y[:10000]
+    x_t, x_val, y_t, y_val = train_test_split(x, y, test_size=0.25, random_state=0)
 
     # random choice
     random.seed(0)
-    indexes = random.sample(range(len(x_val)), 50)
+    indexes = random.sample(range(len(x_val)), 1)
     sample = deepcopy(np.array(x_val)[indexes])
     label = deepcopy(np.array(y_val)[indexes])
 
@@ -72,8 +72,9 @@ def train_with_saliency(conf, architecture=simple, verbose=1):
     with open(conf['paths']['log_dir_path'] + 'result.pkl', 'wb') as f:
         pickle.dump(result.history, f)
 
-    ev_result = model.evaluate(x_test, y_test, batch_size=batch_size, verbose=verbose)
-    print(ev_result)
+    x_test = x_test.reshape(*x_test.shape, 1)
+    score = model.evaluate(x=x_test, y=y_test, batch_size=1, verbose=verbose)
+    print(list(zip(model.metrics_names, score)))
 
 
 def test(x, y, conf):
