@@ -6,7 +6,7 @@ import preprocess
 import training
 from saliency import calculate_saliency, generate_heatmap, calculate_saliency_with_vis
 from evaluation import Evaluation
-from architecture import simple, two_convolution, seven_convolution
+from architecture import simple, two_convolution, numerous_convolution
 from layer import CharacterEmbeddingLayer
 
 
@@ -19,12 +19,13 @@ class Main(object):
         model = configuration["model_parameters"]["architecture"]
         # select whether to do preprocessing
         if prep:
+            print("Do preprocess")
             preprocess.preprocess_wrap(configuration, dump=True, aug=aug)
         # select model architecture
         if model == 'two':
             archi = two_convolution
-        elif model == 'seven':
-            archi = seven_convolution
+        elif model == 'numerous':
+            archi = numerous_convolution
         else:
             archi = simple
         # select whether to generate saliency map

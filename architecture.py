@@ -89,13 +89,15 @@ def two_convolution(conf):
     return Model(input=inputs, output=prediction)
 
 
-def seven_convolution(conf):
+def numerous_convolution(conf):
     # parameter
     model_param, pre_param = conf["model_parameters"], conf["preprocessing_parameters"]
     limit_characters = pre_param["limit_characters"]
     number_of_characters = pre_param["number_of_characters"]
     embedding_dimension = model_param["embedding_dimension"]
     dense_size = model_param["dense_size"]
+    dropout_late = 0.20
+    print(dropout_late)
 
     # layer
     inputs = Input(shape=(limit_characters, 1), dtype='int32')
@@ -111,96 +113,109 @@ def seven_convolution(conf):
     pooling_size_1st = model_param["1st_layer"]["pooling_size"]
     after_width = limit_characters - convolution_width_1st + 1
 
-    c1 = Conv2D(filters=filter_size_1st, kernel_size=(convolution_width_1st, embedding_dimension), padding='valid',
+    x1 = Conv2D(filters=filter_size_1st, kernel_size=(convolution_width_1st, embedding_dimension), padding='valid',
                 activation='relu', data_format='channels_first', name='conv')(x1)
-    b1 = Dropout(0.5)(c1)
-    r1 = Reshape(target_shape=(1, after_width, filter_size_1st))(b1)
-    p1 = MaxPooling2D(pool_size=(pooling_size_1st, pooling_size_1st), data_format='channels_first')(r1)
+    x1 = BatchNormalization()(x1)
+    x1 = Dropout(dropout_late)(x1)
+    x1 = Reshape(target_shape=(1, after_width, filter_size_1st))(x1)
+    last = MaxPooling2D(pool_size=(pooling_size_1st, pooling_size_1st), data_format='channels_first')(x1)
     next_conv_dim = filter_size_1st // pooling_size_1st
     after_width = after_width // pooling_size_1st
 
     # 2nd-conv
-    filter_size_2nd = model_param["2nd_layer"]["filter_size"]
-    convolution_width_2nd = model_param["2nd_layer"]["convolution_width"]
-    pooling_size_2nd = model_param["2nd_layer"]["pooling_size"]
-    after_width = after_width - convolution_width_2nd + 1
+    if "2nd_layer" in model_param:
+        filter_size_2nd = model_param["2nd_layer"]["filter_size"]
+        convolution_width_2nd = model_param["2nd_layer"]["convolution_width"]
+        pooling_size_2nd = model_param["2nd_layer"]["pooling_size"]
+        after_width = after_width - convolution_width_2nd + 1
 
-    c2 = Conv2D(filters=filter_size_2nd, kernel_size=(convolution_width_2nd, next_conv_dim),
-                padding='valid', activation='relu', data_format='channels_first', name='conv2')(p1)
-    b2 = Dropout(0.5)(c2)
-    r2 = Reshape(target_shape=(1, after_width, filter_size_2nd))(b2)
-    p2 = MaxPooling2D(pool_size=(pooling_size_2nd, pooling_size_2nd), data_format='channels_first')(r2)
-    next_conv_dim = filter_size_2nd // pooling_size_2nd
-    after_width = after_width // pooling_size_2nd
+        x2 = Conv2D(filters=filter_size_2nd, kernel_size=(convolution_width_2nd, next_conv_dim),
+                    padding='valid', activation='relu', data_format='channels_first', name='conv2')(last)
+        x2 = BatchNormalization()(x2)
+        x2 = Dropout(dropout_late)(x2)
+        x2 = Reshape(target_shape=(1, after_width, filter_size_2nd))(x2)
+        last = MaxPooling2D(pool_size=(pooling_size_2nd, pooling_size_2nd), data_format='channels_first')(x2)
+        next_conv_dim = filter_size_2nd // pooling_size_2nd
+        after_width = after_width // pooling_size_2nd
 
     # 3rd-conv
-    filter_size_3rd = model_param["3rd_layer"]["filter_size"]
-    convolution_width_3rd = model_param["3rd_layer"]["convolution_width"]
-    pooling_size_3rd = model_param["3rd_layer"]["pooling_size"]
-    after_width = after_width - convolution_width_3rd + 1
+    if "3rd_layer" in model_param:
+        filter_size_3rd = model_param["3rd_layer"]["filter_size"]
+        convolution_width_3rd = model_param["3rd_layer"]["convolution_width"]
+        pooling_size_3rd = model_param["3rd_layer"]["pooling_size"]
+        after_width = after_width - convolution_width_3rd + 1
 
-    c3 = Conv2D(filters=filter_size_3rd, kernel_size=(convolution_width_3rd, next_conv_dim),
-                padding='valid', activation='relu', data_format='channels_first', name='conv3')(p2)
-    b3 = Dropout(0.5)(c3)
-    r3 = Reshape(target_shape=(1, after_width, filter_size_3rd))(b3)
-    p3 = MaxPooling2D(pool_size=(pooling_size_3rd, pooling_size_3rd), data_format='channels_first')(r3)
-    next_conv_dim = filter_size_3rd // pooling_size_3rd
-    after_width = after_width // pooling_size_3rd
+        x3 = Conv2D(filters=filter_size_3rd, kernel_size=(convolution_width_3rd, next_conv_dim),
+                    padding='valid', activation='relu', data_format='channels_first', name='conv3')(last)
+        x3 = BatchNormalization()(x3)
+        x3 = Dropout(dropout_late)(x3)
+        x3 = Reshape(target_shape=(1, after_width, filter_size_3rd))(x3)
+        last = MaxPooling2D(pool_size=(pooling_size_3rd, 2), data_format='channels_first')(x3)
+        #next_conv_dim = filter_size_3rd // pooling_size_3rd
+        next_conv_dim = filter_size_3rd // 2
+        after_width = after_width // pooling_size_3rd
 
     # 4th-conv
-    filter_size_4th = model_param["4th_layer"]["filter_size"]
-    convolution_width_4th = model_param["4th_layer"]["convolution_width"]
-    pooling_size_4th = model_param["4th_layer"]["pooling_size"]
-    after_width = after_width - convolution_width_4th + 1
+    if "4th_layer" in model_param:
+        filter_size_4th = model_param["4th_layer"]["filter_size"]
+        convolution_width_4th = model_param["4th_layer"]["convolution_width"]
+        pooling_size_4th = model_param["4th_layer"]["pooling_size"]
+        after_width = after_width - convolution_width_4th + 1
 
-    c4 = Conv2D(filters=filter_size_4th, kernel_size=(convolution_width_4th, next_conv_dim),
-                padding='valid', activation='relu', data_format='channels_first', name='conv4')(p3)
-    b4 = Dropout(0.5)(c4)
-    r4 = Reshape(target_shape=(1, after_width, filter_size_4th))(b4)
-    p4 = MaxPooling2D(pool_size=(pooling_size_4th, pooling_size_4th), data_format='channels_first')(r4)
-    next_conv_dim = filter_size_4th // pooling_size_4th
-    after_width = after_width // pooling_size_4th
+        x4 = Conv2D(filters=filter_size_4th, kernel_size=(convolution_width_4th, next_conv_dim),
+                    padding='valid', activation='relu', data_format='channels_first', name='conv4')(last)
+        x4 = BatchNormalization()(x4)
+        x4 = Dropout(dropout_late)(x4)
+        x4 = Reshape(target_shape=(1, after_width, filter_size_4th))(x4)
+        last = MaxPooling2D(pool_size=(pooling_size_4th, pooling_size_4th), data_format='channels_first')(x4)
+        next_conv_dim = filter_size_4th // pooling_size_4th
+        after_width = after_width // pooling_size_4th
 
     # 5th-conv
-    filter_size_5th = model_param["5th_layer"]["filter_size"]
-    convolution_width_5th = model_param["5th_layer"]["convolution_width"]
-    pooling_size_5th = model_param["5th_layer"]["pooling_size"]
-    after_width = after_width - convolution_width_5th + 1
+    if "5th_layer" in model_param:
+        filter_size_5th = model_param["5th_layer"]["filter_size"]
+        convolution_width_5th = model_param["5th_layer"]["convolution_width"]
+        pooling_size_5th = model_param["5th_layer"]["pooling_size"]
+        after_width = after_width - convolution_width_5th + 1
 
-    c5 = Conv2D(filters=filter_size_5th, kernel_size=(convolution_width_5th, next_conv_dim),
-                padding='valid', activation='relu', data_format='channels_first', name='conv5')(p4)
-    b5 = Dropout(0.5)(c5)
-    r5 = Reshape(target_shape=(1, after_width, filter_size_5th))(b5)
-    p5 = MaxPooling2D(pool_size=(pooling_size_5th, pooling_size_5th), data_format='channels_first')(r5)
-    next_conv_dim = filter_size_5th // pooling_size_5th
-    after_width = after_width // pooling_size_5th
+        x5 = Conv2D(filters=filter_size_5th, kernel_size=(convolution_width_5th, next_conv_dim),
+                    padding='valid', activation='relu', data_format='channels_first', name='conv5')(last)
+        x5 = BatchNormalization()(x5)
+        x5 = Dropout(dropout_late)(x5)
+        x5 = Reshape(target_shape=(1, after_width, filter_size_5th))(x5)
+        last = MaxPooling2D(pool_size=(pooling_size_5th, pooling_size_5th), data_format='channels_first')(x5)
+        next_conv_dim = filter_size_5th // pooling_size_5th
+        after_width = after_width // pooling_size_5th
 
     # 6th-conv
-    filter_size_6th = model_param["6th_layer"]["filter_size"]
-    convolution_width_6th = model_param["6th_layer"]["convolution_width"]
-    pooling_size_6th = model_param["6th_layer"]["pooling_size"]
-    after_width = after_width - convolution_width_6th + 1
+    if "6th_layer" in model_param:
+        filter_size_6th = model_param["6th_layer"]["filter_size"]
+        convolution_width_6th = model_param["6th_layer"]["convolution_width"]
+        pooling_size_6th = model_param["6th_layer"]["pooling_size"]
+        after_width = after_width - convolution_width_6th + 1
 
-    c6 = Conv2D(filters=filter_size_6th, kernel_size=(convolution_width_6th, next_conv_dim),
-                padding='valid', activation='relu', data_format='channels_first', name='conv6')(p5)
-    b6 = Dropout(0.5)(c6)
-    r6 = Reshape(target_shape=(1, after_width, filter_size_6th))(b6)
-    p6 = MaxPooling2D(pool_size=(pooling_size_6th, pooling_size_6th), data_format='channels_first')(r6)
-    next_conv_dim = filter_size_6th // pooling_size_6th
-    after_width = after_width // pooling_size_6th
+        x6 = Conv2D(filters=filter_size_6th, kernel_size=(convolution_width_6th, next_conv_dim),
+                    padding='valid', activation='relu', data_format='channels_first', name='conv6')(last)
+        x6 = BatchNormalization()(x6)
+        x6 = Dropout(dropout_late)(x6)
+        x6 = Reshape(target_shape=(1, after_width, filter_size_6th))(x6)
+        last = MaxPooling2D(pool_size=(pooling_size_6th, pooling_size_6th), data_format='channels_first')(x6)
+        next_conv_dim = filter_size_6th // pooling_size_6th
+        after_width = after_width // pooling_size_6th
 
     # 7th-conv (final)
-    filter_size_7th = model_param["7th_layer"]["filter_size"]
-    convolution_width_7th = model_param["7th_layer"]["convolution_width"]
-    pooling_size_7th = model_param["7th_layer"]["pooling_size"]
-    after_width = after_width - convolution_width_7th + 1
+    filter_size_final = model_param["final_layer"]["filter_size"]
+    convolution_width_final = model_param["final_layer"]["convolution_width"]
+    pooling_size_final = model_param["final_layer"]["pooling_size"]
+    after_width = after_width - convolution_width_final + 1
 
-    c7 = Conv2D(filters=filter_size_7th, kernel_size=(convolution_width_7th, next_conv_dim),
-                padding='valid', activation='relu', data_format='channels_first', name='conv7')(p6)
-    b7 = Dropout(0.5)(c7)
+    x7 = Conv2D(filters=filter_size_final, kernel_size=(convolution_width_final, next_conv_dim),
+                padding='valid', activation='relu', data_format='channels_first', name='conv7')(last)
+    x7 = BatchNormalization()(x7)
+    x7 = Dropout(dropout_late)(x7)
+    all = MaxPooling2D((after_width, 1), padding='valid', name='pooling', data_format='channels_first')(x7)
 
     # fully-connected
-    all = MaxPooling2D((after_width, 1), padding='valid', name='pooling', data_format='channels_first')(b7)
     f1 = Flatten()(all)
     f2 = Dense(dense_size, activation='relu', name='dense_1')(f1)
     fd2 = Dropout(0.5)(f2)

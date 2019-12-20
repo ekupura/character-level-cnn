@@ -11,6 +11,7 @@ import nltk
 from nltk.corpus import wordnet
 from collections import defaultdict
 from tqdm import tqdm
+from scipy.special import comb
 
 def common_preprocess_sentiment140(input_name):
     with codecs.open(input_name, "r", "UTF-8", "ignore") as file:
@@ -32,6 +33,8 @@ def common_preprocess_sentiment140(input_name):
 
 def lemmatize(dataset):
     labels, texts = [], []
+    nltk.download('punkt')
+    nltk.download('wordnet')
     lemma = nltk.stem.WordNetLemmatizer()
     for l, t in tqdm(zip(dataset["label"], dataset["text"])):
         words = nltk.word_tokenize(t)
@@ -167,10 +170,50 @@ def data_augmentation(dataset, sample_num=100000, sample_rate=None):
     return pd.DataFrame({'text': texts, 'label': labels})
 
 
+def data_augmentation_emuneration(dataset, sample_num=100000, sample_rate=None):
+    nltk.download('averaged_perceptron_tagger')
+    nltk.download('punkt')
+    synonym = Synonym()
+    texts = list(dataset['text'])
+    labels = list(dataset['label'])
+    dataset_size = len(texts)
+    new_texts, new_labels = [], []
+    for i in tqdm(range(dataset_size)):
+        t, l = texts[i], labels[i]
+        words = nltk.word_tokenize(t)
+        words_and_pos = nltk.pos_tag(words)
+
+        replaceable_idx = []
+        for i, (w, p) in enumerate(words_and_pos):
+            p = transform_pos(p)
+            if p != '':
+                replaceable_idx.append(i)
+
+        # combination
+        for i in range(len(words)):
+            word, pos = words_and_pos[i]
+            pos = transform_pos(pos)
+            if pos != '':
+                syn = synonym.get_synonym(word, pos)
+                # replace
+                words[i] = syn
+        new_text = ' '.join(words)
+        if t == new_text:
+            continue
+        new_texts.append(new_text)
+        new_labels.append(l)
+    texts.extend(new_texts)
+    labels.extend(new_labels)
+    texts = pd.Series(texts)
+    labels = pd.Series(labels)
+    _max = np.max(labels)
+    return pd.DataFrame({'text': texts, 'label': labels})
+
+
 # ----------------------------------------------------------------------------------------------------------------------
 
 # main method
-def preprocess(file_name, limit_characters, number_of_characters, aug=False):
+def preprocess_deprecated(file_name, limit_characters, number_of_characters, aug=False):
     extracted_dataset = common_preprocess_sentiment140(file_name)
     #[0-9a-zA-Z_!?,space] 66 characters
     lemma_dataset = lemmatize(extracted_dataset)
@@ -180,6 +223,32 @@ def preprocess(file_name, limit_characters, number_of_characters, aug=False):
     characters_id_lists = texts_to_characters_id_lists(restricted_dataset['text'], limit_characters)
     labels = labels_to_onehot(restricted_dataset['label'])
     return train_test_split(characters_id_lists, labels, test_size=0.2, random_state=183)
+
+
+#[0-9a-zA-Z_!?,space] 66 characters
+def preprocess(file_name, limit_characters, number_of_characters, aug):
+    extracted_dataset = common_preprocess_sentiment140(file_name)
+    lemma_dataset = lemmatize(extracted_dataset)
+
+    # split
+    x_train, x_test, y_train, y_test = train_test_split(lemma_dataset['text'], lemma_dataset['label'], test_size=0.2, random_state=183)
+    train_set = pd.DataFrame({'text': x_train, 'label': y_train})
+    test_set = pd.DataFrame({'text': x_test, 'label': y_test})
+
+    # train
+    if aug:
+        print("Do augmentation")
+        train_set = data_augmentation(train_set, sample_rate=4.0)
+    restricted_train = character_restriction(train_set, restriction_rule=r'[^\w!?,\s]')
+    re_x_train = texts_to_characters_id_lists(restricted_train['text'], limit_characters)
+    re_y_train = labels_to_onehot(restricted_train['label'])
+
+    # test
+    restricted_test = character_restriction(test_set, restriction_rule=r'[^\w!?,\s]')
+    re_x_test = texts_to_characters_id_lists(restricted_test['text'], limit_characters)
+    re_y_test = labels_to_onehot(restricted_test['label'])
+
+    return re_x_train, re_x_test, re_y_train, re_y_test
 
 
 # preprocess and  dump
