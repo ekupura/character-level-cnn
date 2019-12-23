@@ -15,8 +15,9 @@ from tqdm import tqdm
 
 
 class GradientSaliency:
-    def __init__(self, model, label):
+    def __init__(self, model, label, limit_characters):
         # Define the function to compute the gradient
+        self.limit_characters = limit_characters
         out_layer_idx = utils.find_layer_idx(model, 'final')
         in_layer_idx = utils.find_layer_idx(model, 'embedding')
         output_index = int(label[0])
@@ -29,7 +30,7 @@ class GradientSaliency:
         # Execute the function to compute the gradient
         # sample = np_utils.to_categorical(sample, 67)
         # x_value = sample.reshape(1, 150, 67, 1)
-        x_value = sample.reshape(1, 150, 1)
+        x_value = sample.reshape(1, self.limit_characters, 1)
         gradients = self.compute_gradients([x_value])[0][0]
 
         return gradients
@@ -44,7 +45,7 @@ def calculate_saliency(conf, sample, label, model=None):
         layer_dict = {'CharacterEmbeddingLayer': CharacterEmbeddingLayer}
         model = load_model(path, custom_objects=layer_dict)
 
-    saliency = GradientSaliency(model, label)
+    saliency = GradientSaliency(model, label, conf['preprocessing_parameters']['limit_characters'])
     matrix = saliency.get_mask(sample)
     saliency.delete()
     print("zoo")
@@ -54,16 +55,18 @@ def calculate_saliency(conf, sample, label, model=None):
     return np.mean((matrix.reshape(150, 67)), axis=1)
 
 def calculate_saliency_multi(conf, samples, labels, model):
+    limit_characters = conf['preprocessing_parameters']['limit_characters']
+    number_of_characters = conf['preprocessing_parameters']['number_of_characters']
     saliencies = {}
     for label in np.unique(labels, axis=0):
         idx = np.where(label == 1.0)[0][0]
-        saliencies[idx] = GradientSaliency(model, list(label))
+        saliencies[idx] = GradientSaliency(model, list(label), limit_characters)
 
     results = []
     for sample, label in tqdm(zip(samples, labels)):
         idx = np.where(label == 1.0)[0][0]
         matrix = saliencies[idx].get_mask(sample)
-        results.append(np.mean((matrix.reshape(150, 67)), axis=1))
+        results.append(np.mean((matrix.reshape(limit_characters, number_of_characters)), axis=1))
 
     return results
 

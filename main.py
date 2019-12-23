@@ -14,13 +14,17 @@ class Main(object):
     def __init__(self):
         pass
 
-    def train(self, conf_path, prep=False, sali=False, model='simple', aug=False, verbose=1):
+    def train(self, conf_path, prep=False, aug=False, verbose=1):
         configuration = self._load_configuration(conf_path)
         model = configuration["model_parameters"]["architecture"]
+        data_type = configuration["model_parameters"]["architecture"]
         # select whether to do preprocessing
         if prep:
-            print("Do preprocess")
-            preprocess.preprocess_wrap(configuration, dump=True, aug=aug)
+            if data_type == 'sentiment140':
+                preprocess.preprocess_sentiment140(configuration, dump=True, aug=aug)
+            else:
+                preprocess.preprocess_imdb(configuration, dump=True, aug=aug)
+
         # select model architecture
         if model == 'two':
             archi = two_convolution
@@ -30,7 +34,6 @@ class Main(object):
             archi = simple
         # select whether to generate saliency map
         training.train_with_saliency(configuration, archi, verbose)
-
 
     # testing saliency map
     def generate_saliency_heatmap(self, configuration_path):

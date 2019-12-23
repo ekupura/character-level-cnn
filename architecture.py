@@ -96,7 +96,7 @@ def numerous_convolution(conf):
     number_of_characters = pre_param["number_of_characters"]
     embedding_dimension = model_param["embedding_dimension"]
     dense_size = model_param["dense_size"]
-    dropout_late = 0.20
+    dropout_late = 0.50
     print(dropout_late)
 
     # layer
@@ -105,7 +105,7 @@ def numerous_convolution(conf):
     r1 = Reshape(target_shape=(1, limit_characters, number_of_characters))(l1)
 
     # embedding
-    x1 = CharacterEmbeddingLayer(embedding_dimension, name='embedding')(r1)
+    last = CharacterEmbeddingLayer(embedding_dimension, name='embedding')(r1)
 
     # 1st-conv
     filter_size_1st = model_param["1st_layer"]["filter_size"]
@@ -114,7 +114,7 @@ def numerous_convolution(conf):
     after_width = limit_characters - convolution_width_1st + 1
 
     x1 = Conv2D(filters=filter_size_1st, kernel_size=(convolution_width_1st, embedding_dimension), padding='valid',
-                activation='relu', data_format='channels_first', name='conv')(x1)
+                activation='relu', data_format='channels_first', name='conv')(last)
     x1 = BatchNormalization()(x1)
     x1 = Dropout(dropout_late)(x1)
     x1 = Reshape(target_shape=(1, after_width, filter_size_1st))(x1)
@@ -122,6 +122,7 @@ def numerous_convolution(conf):
     next_conv_dim = filter_size_1st // pooling_size_1st
     after_width = after_width // pooling_size_1st
 
+    """
     # 2nd-conv
     if "2nd_layer" in model_param:
         filter_size_2nd = model_param["2nd_layer"]["filter_size"]
@@ -203,6 +204,7 @@ def numerous_convolution(conf):
         next_conv_dim = filter_size_6th // pooling_size_6th
         after_width = after_width // pooling_size_6th
 
+    """
     # 7th-conv (final)
     filter_size_final = model_param["final_layer"]["filter_size"]
     convolution_width_final = model_param["final_layer"]["convolution_width"]

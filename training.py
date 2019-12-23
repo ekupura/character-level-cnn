@@ -39,7 +39,7 @@ def train_with_saliency(conf, architecture=simple, verbose=1):
     for layer in model.layers:
         layer.trainable = True
     model.compile(loss='categorical_crossentropy',
-                  optimizer=SGD(lr=0.1, decay=1e-5),
+                  optimizer=SGD(lr=0.01, decay=1e-6),
                   metrics=['accuracy'])
     model.summary()
     # x, y = x[:10000], y[:10000]
@@ -58,7 +58,7 @@ def train_with_saliency(conf, architecture=simple, verbose=1):
 
     epoch_saliency = GifSaliency(conf, sample, label)
     paths = conf["paths"]
-    early_stopping = EarlyStopping(monitor='val_loss', patience=5, verbose=1)
+    early_stopping = EarlyStopping(monitor='val_loss', patience=30, verbose=1)
     model_checkpoint = ModelCheckpoint(paths["model_path"], verbose=1, save_best_only=True)
     tensor_board = TensorBoard(log_dir=paths["log_dir_path"], histogram_freq=0)
     cb = [epoch_saliency, early_stopping, model_checkpoint, tensor_board]
