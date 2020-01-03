@@ -6,7 +6,7 @@ import preprocess
 import training
 from saliency import calculate_saliency, generate_heatmap, calculate_saliency_with_vis
 from evaluation import Evaluation
-from architecture import simple, two_convolution, numerous_convolution
+from architecture import simple, two_convolution, numerous_convolution, autoencoder, autoencoder1d
 from layer import CharacterEmbeddingLayer
 
 
@@ -14,10 +14,10 @@ class Main(object):
     def __init__(self):
         pass
 
-    def train(self, conf_path, prep=False, aug=False, verbose=1):
+    def train(self, conf_path, prep=False, aug=False, auto=False, verbose=1):
         configuration = self._load_configuration(conf_path)
         model = configuration["model_parameters"]["architecture"]
-        data_type = configuration["model_parameters"]["architecture"]
+        data_type = configuration["preprocessing_parameters"]["architecture"]
         # select whether to do preprocessing
         if prep:
             if data_type == 'sentiment140':
@@ -30,10 +30,16 @@ class Main(object):
             archi = two_convolution
         elif model == 'numerous':
             archi = numerous_convolution
+        elif model == 'auto':
+            archi = autoencoder1d
         else:
             archi = simple
         # select whether to generate saliency map
-        training.train_with_saliency(configuration, archi, verbose)
+        if model == 'auto':
+            #training.train_autoencoder(configuration, archi, verbose)
+            training.train_classify_cnn(configuration)
+        else:
+            training.train_with_saliency(configuration, archi, verbose, auto)
 
     # testing saliency map
     def generate_saliency_heatmap(self, configuration_path):
