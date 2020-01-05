@@ -1,6 +1,6 @@
 from keras.models import Model, load_model
 from keras.layers import Input, Dense, Conv2D, Dropout, MaxPooling2D, Conv2DTranspose, MaxPooling3D, UpSampling2D
-from keras.layers import Lambda, Embedding, Reshape, Activation, Flatten, Conv1D
+from keras.layers import Lambda, Embedding, Reshape, Activation, Flatten, Conv1D, MaxPooling1D, LSTM
 from keras.layers import BatchNormalization
 from keras.utils import np_utils
 from layer import CharacterEmbeddingLayer
@@ -427,7 +427,7 @@ def classification_cnn(conf):
 
     return Model(input=inputs, output=prediction)
 
-def classification_dense(inputs):
+def classification_dense(conf):
     dropout_rate = 0.1
 
     # input layer
@@ -437,5 +437,96 @@ def classification_dense(inputs):
     x = Dense(1024, activation='relu')(x)
     x = Dense(1024, activation='relu')(x)
     prediction = Dense(2, activation='softmax')(x)
+
+    return Model(input=inputs, output=prediction)
+
+def character_level_cnn(conf):
+
+    model_param, pre_param = conf["model_parameters"], conf["preprocessing_parameters"]
+    limit_characters = pre_param["limit_characters"]
+    number_of_characters = pre_param["number_of_characters"]
+    dropout_rate = 0.25
+
+    # input layer
+    inputs = Input(shape=(limit_characters, 1), dtype='int32')
+    l1 = Lambda(lambda x: K.one_hot(x, num_classes=number_of_characters))(inputs)
+    emb = Reshape(target_shape=(number_of_characters, limit_characters))(l1)
+
+    # 1st-conv
+    x = Conv1D(filters=32, kernel_size=5, padding='same',
+               activation='relu', data_format='channels_first', name='embedding')(emb)
+    x = Reshape(target_shape=(1, 32, 160))(x)
+    x = MaxPooling2D(pool_size=2, data_format='channels_first', padding='valid')(x)
+    x = Reshape(target_shape=(16, 80))(x)
+    x = BatchNormalization()(x)
+    x = Dropout(dropout_rate)(x)
+
+    # 2nd-conv
+    x = Conv1D(filters=64, kernel_size=3,
+               padding='same', activation='relu', data_format='channels_first')(x)
+    x = Reshape(target_shape=(1, 64, 80))(x)
+    x = MaxPooling2D(pool_size=2, data_format='channels_first', padding='valid')(x)
+    x = Reshape(target_shape=(32, 40))(x)
+    x = BatchNormalization()(x)
+    x = Dropout(dropout_rate)(x)
+
+    """
+    # 2nd-conv
+    x = Conv1D(filters=128, kernel_size=3,
+               padding='same', activation='relu', data_format='channels_first')(x)
+    x = Reshape(target_shape=(1, 128, 40))(x)
+    x = MaxPooling2D(pool_size=2, data_format='channels_first', padding='valid')(x)
+    x = Reshape(target_shape=(64, 20))(x)
+    x = BatchNormalization()(x)
+    x = Dropout(dropout_rate)(x)
+
+    # 2nd-conv
+    x = Conv1D(filters=256, kernel_size=3,
+               padding='same', activation='relu', data_format='channels_first')(x)
+    x = Reshape(target_shape=(1, 256, 20))(x)
+    x = MaxPooling2D(pool_size=2, data_format='channels_first', padding='valid')(x)
+    x = Reshape(target_shape=(128, 10))(x)
+    x = BatchNormalization()(x)
+    x = Dropout(dropout_rate)(x)
+    """
+
+    # concentlate
+    x = Reshape(target_shape=(40, 32))(x)
+    x = LSTM(128)(x)
+    x = Dropout(dropout_rate)(x)
+    prediction = Dense(1, activation='sigmoid', name='final')(x)
+
+    return Model(input=inputs, output=prediction)
+
+
+def character_level_cnn2(conf):
+
+    model_param, pre_param = conf["model_parameters"], conf["preprocessing_parameters"]
+    limit_characters = pre_param["limit_characters"]
+    number_of_characters = pre_param["number_of_characters"]
+    dropout_rate = 0.25
+
+    # input layer
+    inputs = Input(shape=(limit_characters, 1), dtype='int32')
+    l1 = Lambda(lambda x: K.one_hot(x, num_classes=number_of_characters))(inputs)
+    emb = Reshape(target_shape=(number_of_characters, limit_characters))(l1)
+
+    # 1st-conv
+    x = Conv1D(filters=256, kernel_size=3, padding='same',
+               activation='relu', data_format='channels_first', name='embedding')(emb)
+    x = Reshape(target_shape=(160, 256))(x)
+    x = MaxPooling1D(pool_size=2, data_format='channels_first', padding='same')(x)
+    #x = Conv1D(filters=256, kernel_size=3, padding='same',
+    #           activation='relu', data_format='channels_first')(x)
+    #x = Conv1D(filters=256, kernel_size=3, padding='same',
+    #           activation='relu', data_format='channels_first')(x)
+    x = BatchNormalization()(x)
+    x = Dropout(dropout_rate)(x)
+
+    # concentlate
+    x = Reshape(target_shape=(160, 128))(x)
+    x = LSTM(512)(x)
+    x = Dropout(dropout_rate)(x)
+    prediction = Dense(1, activation='sigmoid', name='final')(x)
 
     return Model(input=inputs, output=prediction)

@@ -131,7 +131,7 @@ def generate_animation_heatmap(conf, saliency_list, id_list, case, label='', sm=
     if sm:
         saliency_list = [softmax(saliency).reshape(15, 10) for saliency in saliency_list]
     else:
-        saliency_list = [saliency.reshape(15, 10) for saliency in saliency_list]
+        saliency_list = [saliency.reshape(16, 10) for saliency in saliency_list]
     text = id_list_to_characters(id_list)
     case = case + 1
 

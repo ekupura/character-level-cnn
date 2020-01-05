@@ -6,7 +6,8 @@ import preprocess
 import training
 from saliency import calculate_saliency, generate_heatmap, calculate_saliency_with_vis
 from evaluation import Evaluation
-from architecture import simple, two_convolution, numerous_convolution, autoencoder, autoencoder1d
+from architecture import simple, two_convolution, numerous_convolution, autoencoder, autoencoder1d, character_level_cnn
+from architecture import character_level_cnn2
 from layer import CharacterEmbeddingLayer
 
 
@@ -30,6 +31,8 @@ class Main(object):
             archi = two_convolution
         elif model == 'numerous':
             archi = numerous_convolution
+        elif model == 'charcnn':
+            archi = character_level_cnn2
         elif model == 'auto':
             archi = autoencoder1d
         else:
