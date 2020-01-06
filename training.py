@@ -45,7 +45,7 @@ def train_with_saliency(conf, architecture=simple, verbose=1, autoencoder=True):
     for layer in model.layers:
         layer.trainable = True
     model.compile(loss='binary_crossentropy',
-                  optimizer='adam',
+                  optimizer='rmsprop',
                   metrics=['accuracy'])
     model.summary()
     # x, y = x[:10000], y[:10000]
@@ -53,23 +53,23 @@ def train_with_saliency(conf, architecture=simple, verbose=1, autoencoder=True):
 
     # random choice
     random.seed(0)
-    indexes = random.sample(range(len(x_val)), 1)
+    indexes = random.sample(range(len(x_val)), 10)
     sample = deepcopy(np.array(x_val)[indexes])
     label = deepcopy(np.array(y_val)[indexes])
 
     x_t, x_val = x_t[x_t.shape[0] % batch_size:], x_val[x_val.shape[0] % batch_size:]
     y_t, y_val = y_t[y_t.shape[0] % batch_size:], y_val[y_val.shape[0] % batch_size:]
     x_t, x_val = x_t.reshape(*x_t.shape, 1), x_val.reshape(*x_val.shape, 1)
-    y_t, y_val = np.argmax(y_t, axis=1), np.argmax(y_val, axis=1)
+    #y_t, y_val = np.argmax(y_t, axis=1), np.argmax(y_val, axis=1)
 
     # callbacks
-    #epoch_saliency = GifSaliency(conf, sample, label)
+    epoch_saliency = GifSaliency(conf, sample, label, gif=False)
     paths = conf["paths"]
     early_stopping = EarlyStopping(monitor='val_loss', patience=10, verbose=1)
     model_checkpoint = ModelCheckpoint(paths["model_path"], verbose=1, save_best_only=True)
     tensor_board = TensorBoard(log_dir=paths["log_dir_path"], histogram_freq=0)
-    # cb = [epoch_saliency, early_stopping, model_checkpoint, tensor_board]
-    cb = [early_stopping, model_checkpoint, tensor_board]
+    cb = [epoch_saliency, early_stopping, model_checkpoint, tensor_board]
+    # cb = [early_stopping, model_checkpoint, tensor_board]
 
     # train
     result = model.fit(x_t, y_t, epochs=epochs, batch_size=batch_size, callbacks=cb,
@@ -83,8 +83,8 @@ def train_with_saliency(conf, architecture=simple, verbose=1, autoencoder=True):
 
     # test
     x_test = x_test.reshape(*x_test.shape, 1)
-    y_test = np.argmax(y_test, axis=1)
-    score = model.evaluate(x=x_test, y=y_test, batch_size=1, verbose=verbose)
+    #y_test = np.argmax(y_test, axis=1)
+    score = model.evaluate(x=x_test, y=y_test, batch_size=512, verbose=verbose)
     print(list(zip(model.metrics_names, score)))
 
 

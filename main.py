@@ -4,10 +4,10 @@ import pickle
 from copy import deepcopy
 import preprocess
 import training
-from saliency import calculate_saliency, generate_heatmap, calculate_saliency_with_vis
+from saliency import calculate_saliency, generate_animation_heatmap, calculate_saliency_with_vis
 from evaluation import Evaluation
 from architecture import simple, two_convolution, numerous_convolution, autoencoder, autoencoder1d, character_level_cnn
-from architecture import character_level_cnn2
+from architecture import character_level_cnn2, character_level_cnn_concatenate
 from layer import CharacterEmbeddingLayer
 
 
@@ -33,6 +33,8 @@ class Main(object):
             archi = numerous_convolution
         elif model == 'charcnn':
             archi = character_level_cnn2
+        elif model == 'charcnn3':
+            archi = character_level_cnn_concatenate
         elif model == 'auto':
             archi = autoencoder1d
         else:
@@ -44,14 +46,13 @@ class Main(object):
         else:
             training.train_with_saliency(configuration, archi, verbose, auto)
 
-    # testing saliency map
-    def generate_saliency_heatmap(self, configuration_path):
+    def generate_saliency_gif(self, configuration_path):
         configuration = self._load_configuration(configuration_path)
-        dataset = self._load_preprocessed_dataset(configuration)
-        sample_text = dataset['x_train'][111]
-        sample_label = dataset['y_train'][111]
-        saliency_vector = calculate_saliency_with_vis(configuration, sample_text, sample_label)
-        generate_heatmap(configuration, saliency_vector, sample_text, sample_label)
+        pkl_path = configuration["paths"]["saliency_pkl_path"]
+        with open(pkl_path, "rb") as f:
+            data = pickle.load(f)
+            for i, j, k, l in zip(data[0], data[1], data[2], data[3]):
+                generate_animation_heatmap(configuration, i, j, k, l)
 
     def test_evaluation(self, configuration_path):
         configuration = self._load_configuration(configuration_path)

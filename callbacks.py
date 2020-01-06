@@ -5,6 +5,7 @@ from keras.callbacks import Callback
 from keras import backend as K
 from tqdm import tqdm
 import saliency
+import pickle
 
 
 class EpochSaliency(keras.callbacks.Callback) :
@@ -40,10 +41,11 @@ class EpochSaliency(keras.callbacks.Callback) :
 
 
 class GifSaliency(keras.callbacks.Callback) :
-    def __init__(self, conf, samples, labels):
+    def __init__(self, conf, samples, labels, gif=True):
         self.conf = conf
         self.samples = samples
         self.labels = labels
+        self.gif = gif
         self.saliencies = [[] for i in samples]
 
     def on_train_begin(self, logs=None):
@@ -51,8 +53,13 @@ class GifSaliency(keras.callbacks.Callback) :
 
     def on_train_end(self, logs=None):
         print("generating...")
-        for case, (sali, sample, label) in tqdm(enumerate(zip(self.saliencies, self.samples, self.labels))):
-            saliency.generate_animation_heatmap(self.conf, sali, sample, case, label)
+        if self.gif:
+            for case, (sali, sample, label) in tqdm(enumerate(zip(self.saliencies, self.samples, self.labels))):
+                saliency.generate_animation_heatmap(self.conf, case, sali, sample, label)
+        else:
+            with open(self.conf["paths"]["saliency_pkl_path"], "wb") as f:
+                pickle.dump((list(range(len(self.samples))), self.saliencies, self.samples, self.labels), f, protocol=4)
+
 
     def on_batch_begin(self, batch, logs = None):
         pass

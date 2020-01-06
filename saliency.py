@@ -66,7 +66,7 @@ def calculate_saliency_multi(conf, samples, labels, model):
     for sample, label in tqdm(zip(samples, labels)):
         idx = np.where(label == 1.0)[0][0]
         matrix = saliencies[idx].get_mask(sample)
-        results.append(np.mean((matrix.reshape(limit_characters, number_of_characters)), axis=1))
+        results.append(np.sum((matrix.reshape(limit_characters, number_of_characters)), axis=1))
 
     return results
 
@@ -126,7 +126,7 @@ def generate_heatmap(conf, saliency, id_list, epoch=None, path=None, z_norm=Fals
 
 
 # generate one gif image
-def generate_animation_heatmap(conf, saliency_list, id_list, case, label='', sm=False):
+def generate_animation_heatmap(conf, case, saliency_list, id_list, label='', sm=False):
     # preprocess
     if sm:
         saliency_list = [softmax(saliency).reshape(15, 10) for saliency in saliency_list]
