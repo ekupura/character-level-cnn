@@ -540,7 +540,7 @@ def character_level_cnn_concatenate(conf):
 
     # input layer
     inputs = Input(shape=(limit_characters, 1), dtype='int32')
-    l1 = Lambda(lambda x: K.one_hot(x, num_classes=number_of_characters))(inputs)
+    l1 = Lambda(lambda x: K.one_hot(x, num_classes=number_of_characters), name='input')(inputs)
     emb = Reshape(target_shape=(number_of_characters, limit_characters))(l1)
 
     # 1st-conv
@@ -572,7 +572,7 @@ def character_level_cnn_concatenate(conf):
     # concentlate
     x = Concatenate(axis=-1)([x, x2, x3])
 
-    x = Bidirectional(LSTM(50))(x)
+    x = Bidirectional(LSTM(200))(x)
     x = BatchNormalization()(x)
     x = Dropout(dropout_rate)(x)
     prediction = Dense(2, activation='softmax', name='final')(x)
