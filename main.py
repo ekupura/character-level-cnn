@@ -4,10 +4,11 @@ import pickle
 from copy import deepcopy
 import preprocess
 import training
+import architecture
 from saliency import calculate_saliency, generate_animation_heatmap, calculate_saliency_with_vis
 from evaluation import Evaluation
 from architecture import simple, two_convolution, numerous_convolution, autoencoder, autoencoder1d, character_level_cnn
-from architecture import character_level_cnn2, character_level_cnn_concatenate
+from architecture import character_level_cnn2
 from layer import CharacterEmbeddingLayer
 
 
@@ -33,8 +34,10 @@ class Main(object):
             archi = numerous_convolution
         elif model == 'charcnn':
             archi = character_level_cnn2
-        elif model == 'charcnn3':
-            archi = character_level_cnn_concatenate
+        elif model == 'charcnn1p':
+            archi = architecture.character_level_cnn_concatenate1p
+        elif model == 'charcnn3p':
+            archi = architecture.character_level_cnn_concatenate3p
         elif model == 'auto':
             archi = autoencoder1d
         else:
