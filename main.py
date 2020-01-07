@@ -38,16 +38,10 @@ class Main(object):
             archi = architecture.character_level_cnn_concatenate1p
         elif model == 'charcnn3p':
             archi = architecture.character_level_cnn_concatenate3p
-        elif model == 'auto':
-            archi = autoencoder1d
         else:
             archi = simple
         # select whether to generate saliency map
-        if model == 'auto':
-            #training.train_autoencoder(configuration, archi, verbose)
-            training.train_classify_cnn(configuration)
-        else:
-            training.train_with_saliency(configuration, archi, verbose, auto)
+        training.train_with_saliency(configuration, archi, verbose)
 
     def generate_saliency_gif(self, configuration_path):
         configuration = self._load_configuration(configuration_path)
