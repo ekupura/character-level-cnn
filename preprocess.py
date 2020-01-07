@@ -216,9 +216,12 @@ class Sentiment140(PreprocessBase):
     def preprocess(self, file_name, limit_characters, number_of_characters, aug):
         extracted_dataset = self.common_preprocess_sentiment140(file_name)
         lemma_dataset = self.lemmatize(extracted_dataset)
+        #lemma_dataset = extracted_dataset
+
+        x, y = np.array(lemma_dataset["text"]), np.array(lemma_dataset["label"])
 
         # split
-        x_train, x_test, y_train, y_test = train_test_split(lemma_dataset['text'], lemma_dataset['label'], test_size=0.2, random_state=183)
+        x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2, random_state=183)
         train_set = pd.DataFrame({'text': x_train, 'label': y_train})
         test_set = pd.DataFrame({'text': x_test, 'label': y_test})
 

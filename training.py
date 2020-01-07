@@ -1,6 +1,6 @@
 from keras.models import Model, load_model
 from keras.layers import Input, Dense, Conv2D, Dropout, MaxPooling2D, Lambda, Embedding, Reshape, Activation, Flatten
-from keras.optimizers import SGD, Adam
+from keras.optimizers import SGD, Adam, RMSprop
 from keras.callbacks import EarlyStopping, TensorBoard, ModelCheckpoint
 from keras.utils import np_utils
 import keras.backend as K
@@ -44,11 +44,11 @@ def train_with_saliency(conf, architecture=simple, verbose=1, autoencoder=True):
     model = architecture(conf)
     for layer in model.layers:
         layer.trainable = True
-    model.compile(loss='binary_crossentropy',
-                  optimizer='rmsprop',
+    model.compile(loss='categorical_crossentropy',
+                  optimizer=SGD(lr=0.01),
                   metrics=['accuracy'])
     model.summary()
-    x, y = x[:10000], y[:10000]
+    # x, y = x[:10000], y[:10000]
     x_t, x_val, y_t, y_val = train_test_split(x, y, test_size=0.2, random_state=0)
 
     # random choice
