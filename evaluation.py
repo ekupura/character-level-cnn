@@ -7,7 +7,7 @@ from keras.models import load_model
 from collections import defaultdict
 from tqdm import tqdm
 from preprocess import id_list_to_characters
-from saliency import calculate_saliency_with_vis, generate_heatmap
+from saliency import calculate_saliency, generate_heatmap
 
 
 class Evaluation:
@@ -32,9 +32,10 @@ class Evaluation:
         return good_synonyms, bad_synonyms
 
     def search_keyword(self, dataset, keywords):
-        train_index = self._get_index(dataset['x_train'], keywords)
+        #train_index = self._get_index(dataset['x_train'], keywords)
         test_index = self._get_index(dataset['x_test'], keywords)
-        return train_index, test_index
+        #return train_index, test_index
+        return test_index
 
     def single_keyword_evaluation(self, configuration, good_bad=False):
         path = configuration['paths']['preprocessed_path']
@@ -47,7 +48,7 @@ class Evaluation:
             good, bad = self.collect_synonyms_for_sentiment()
             keywords = good + bad
 
-        train_index, test_index = self.search_keyword(dataset, keywords)
+        test_index = self.search_keyword(dataset, keywords)
 
         def exclusion(index):
             return_index = defaultdict(list)
@@ -74,8 +75,8 @@ class Evaluation:
                 for i, v in enumerate(index[key]):
                     if i == max_heatmap:
                         break
-                    saliency = calculate_saliency_with_vis(configuration, x[v], y[v])
-                    generate_heatmap(configuration, saliency, x[v], y[v], key, keyword_dir + str(i) + '.png')
+                    saliency = calculate_saliency(configuration, x[v], y[v])
+                    generate_heatmap(configuration, saliency, x[v], y[v], path=keyword_dir + str(i) + '.png')
 
         #sample_text_to_saliency_heatmap(single_train_index, dataset['x_train'], dataset['y_train'])
         sample_text_to_saliency_heatmap(single_test_index, dataset['x_test'], dataset['y_test'])

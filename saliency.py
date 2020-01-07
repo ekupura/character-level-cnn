@@ -48,11 +48,11 @@ def calculate_saliency(conf, sample, label, model=None):
     saliency = GradientSaliency(model, label, conf['preprocessing_parameters']['limit_characters'])
     matrix = saliency.get_mask(sample)
     saliency.delete()
-    print("zoo")
-    #matrix = np.zeros((150,67))
+    if matrix is None:
+        matrix = np.zeros((160, 67))
     del(saliency)
 
-    return np.mean((matrix.reshape(150, 67)), axis=1)
+    return np.mean((matrix.reshape(160, 67)), axis=1)
 
 def calculate_saliency_multi(conf, samples, labels, model):
     limit_characters = conf['preprocessing_parameters']['limit_characters']
@@ -91,9 +91,9 @@ def generate_heatmap(conf, saliency, id_list, epoch=None, path=None, z_norm=Fals
     # preprocess
     if z_norm:
         saliency[saliency < 0.0] = 0.0
-        saliency = zscore(saliency.reshape(15, 10))
+        saliency = zscore(saliency.reshape(16, 10))
     else:
-        saliency = (saliency.reshape(15, 10))
+        saliency = (saliency.reshape(16, 10))
     text = id_list_to_characters(id_list)
 
     f = plt.figure(figsize=(7, 5))
