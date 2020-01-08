@@ -256,7 +256,7 @@ def character_level_cnn_origin(conf):
 
     # 7-conv
     for i in range(model_param["conv_7_loop"] - 1):
-        x = Conv1D(filters=256, kernel_size=7, padding='same', activation='relu')(emb)
+        x = Conv1D(filters=256, kernel_size=7, padding='same', activation='relu')(x)
         x = MaxPooling1D(pool_size=2, padding='valid')(x)
         x = BatchNormalization()(x)
         x = Dropout(dropout_rate)(x)
@@ -264,7 +264,7 @@ def character_level_cnn_origin(conf):
 
     # 3-conv
     for i in range(model_param["conv_3_loop"]):
-        x = Conv1D(filters=256, kernel_size=7, padding='same', activation='relu')(emb)
+        x = Conv1D(filters=256, kernel_size=7, padding='same', activation='relu')(x)
         x = MaxPooling1D(pool_size=2, padding='valid')(x)
         x = BatchNormalization()(x)
         x = Dropout(dropout_rate)(x)
