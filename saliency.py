@@ -42,8 +42,9 @@ class GradientSaliency:
 def calculate_saliency(conf, sample, label, model=None):
     if model is None:
         path = conf["paths"]["model_path"]
-        layer_dict = {'CharacterEmbeddingLayer': CharacterEmbeddingLayer}
-        model = load_model(path, custom_objects=layer_dict)
+        # layer_dict = {'CharacterEmbeddingLayer': CharacterEmbeddingLayer}
+        # model = load_model(path, custom_objects=layer_dict)
+        model = load_model(path)
 
     saliency = GradientSaliency(model, label, conf['preprocessing_parameters']['limit_characters'])
     matrix = saliency.get_mask(sample)

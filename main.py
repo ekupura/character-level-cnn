@@ -7,7 +7,7 @@ import training
 import architecture
 from saliency import calculate_saliency, generate_animation_heatmap, calculate_saliency_with_vis
 from evaluation import Evaluation
-from architecture import simple, two_convolution, numerous_convolution, autoencoder, autoencoder1d
+from architecture import simple, two_convolution, numerous_convolution
 import architecture
 from layer import CharacterEmbeddingLayer
 
@@ -16,7 +16,7 @@ class Main(object):
     def __init__(self):
         pass
 
-    def train(self, conf_path, prep=False, aug=False, auto=False, verbose=1):
+    def train(self, conf_path, prep=False, aug=False, multi_gpu=False, verbose=1):
         configuration = self._load_configuration(conf_path)
         model = configuration["model_parameters"]["architecture"]
         data_type = configuration["preprocessing_parameters"]["architecture"]
@@ -32,7 +32,7 @@ class Main(object):
             archi = two_convolution
         elif model == 'numerous':
             archi = numerous_convolution
-        elif model == 'origin':
+        elif model == 'origin1':
             archi = architecture.character_level_cnn_origin
         elif model == 'charcnn1p':
             archi = architecture.character_level_cnn_concatenate1p
@@ -41,7 +41,7 @@ class Main(object):
         else:
             archi = simple
         # select whether to generate saliency map
-        training.train_with_saliency(configuration, archi, verbose)
+        training.train_with_saliency(configuration, archi, verbose, multi_gpu)
 
     def generate_saliency_gif(self, configuration_path):
         configuration = self._load_configuration(configuration_path)
@@ -56,8 +56,8 @@ class Main(object):
         evaluation = Evaluation()
         evaluation.single_keyword_evaluation(configuration)
 
-    def do_simple_evaluation(self, configuration_path):
-        configuration = self._load_configuration(configuration_path)
+    def do_simple_evaluation(self, conf_path):
+        configuration = self._load_configuration(conf_path)
         evaluation = Evaluation()
         evaluation.good_and_bad_evaluation(configuration)
 

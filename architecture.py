@@ -239,38 +239,50 @@ def character_level_cnn_origin(conf):
     dropout_rate = 0.25
 
     # input layer
-    inputs = Input(shape=(limit_characters, 1), dtype='int32')
+    inputs = Input(shape=(limit_characters, 1), dtype='int64')
     x = Reshape(target_shape=(limit_characters,))(inputs)
-    # l1 = Lambda(lambda x: K.one_hot(x, num_classes=number_of_characters))(inputs)
-    l1 = Embedding(input_dim=1, output_dim=number_of_characters, embeddings_regularizer=l2(0.01))(x)
+    #l1 = Embedding(input_dim=1, output_dim=number_of_characters, embeddings_initializer='random_normal',
+    #               embeddings_regularizer=l2(0.01))(x)
+    l1 = Lambda(lambda x: K.one_hot(K.cast(x, "int64"), num_classes=number_of_characters))(inputs)
     emb = Reshape(target_shape=(limit_characters, number_of_characters))(l1)
+    loop_num = 0
 
-    # 1st-conv
-    x = Conv1D(filters=256, kernel_size=5, padding='same', activation='relu', name='embedding')(emb)
-    x = MaxPooling1D(pool_size=160, padding='valid')(x)
-    """
-    x = Conv1D(filters=256, kernel_size=5, padding='same', activation='relu')(x)
-    x = MaxPooling1D(pool_size=4, padding='valid')(x)
-    x = Conv1D(filters=256, kernel_size=5, padding='same', activation='relu')(x)
-    x = MaxPooling1D(pool_size=4, padding='valid')(x)
-    x = Conv1D(filters=256, kernel_size=5, padding='same', activation='relu')(x)
+    # first_7_conv
+    x = Conv1D(filters=256, kernel_size=7, padding='same', activation='relu', name='embedding')(emb)
     x = MaxPooling1D(pool_size=2, padding='valid')(x)
-    """
     x = BatchNormalization()(x)
     x = Dropout(dropout_rate)(x)
+    loop_num = loop_num + 1
 
+    # 7-conv
+    for i in range(model_param["conv_7_loop"] - 1):
+        x = Conv1D(filters=256, kernel_size=7, padding='same', activation='relu')(emb)
+        x = MaxPooling1D(pool_size=2, padding='valid')(x)
+        x = BatchNormalization()(x)
+        x = Dropout(dropout_rate)(x)
+        loop_num = loop_num + 1
+
+    # 3-conv
+    for i in range(model_param["conv_3_loop"]):
+        x = Conv1D(filters=256, kernel_size=7, padding='same', activation='relu')(emb)
+        x = MaxPooling1D(pool_size=2, padding='valid')(x)
+        x = BatchNormalization()(x)
+        x = Dropout(dropout_rate)(x)
+        loop_num = loop_num + 1
 
     # concentlate
+    x = MaxPooling1D(pool_size=limit_characters // (2 * loop_num), padding='valid')(x)
     x = Flatten()(x)
-    x = Dense(512, activation='relu', kernel_regularizer=l2(0.01), bias_regularizer=l2(0.01))(x)
-    x = Dropout(dropout_rate)(x)
-    x = Dense(512, activation='relu', kernel_regularizer=l2(0.01), bias_regularizer=l2(0.01))(x)
-    x = Dropout(dropout_rate)(x)
-    x = Dense(512, activation='relu', kernel_regularizer=l2(0.01), bias_regularizer=l2(0.01))(x)
-    x = Dropout(dropout_rate)(x)
+
+    for i in range(3):
+        x = Dense(1024, activation='relu', kernel_regularizer=l2(0.01), bias_regularizer=l2(0.01))(x)
+        x = BatchNormalization()(x)
+        x = Dropout(dropout_rate)(x)
     prediction = Dense(2, activation='softmax', name='final')(x)
 
     return Model(input=inputs, output=prediction)
+
+
 
 
 def character_level_cnn_concatenate3p(conf):

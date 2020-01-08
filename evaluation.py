@@ -43,7 +43,7 @@ class Evaluation:
             dataset = pickle.load(f)
 
         if good_bad:
-            keywords = ['good', 'comfortable', 'beautiful']
+            keywords = ['good', 'comfortable', 'beautiful', 'congratulation', 'bad']
         else:
             good, bad = self.collect_synonyms_for_sentiment()
             keywords = good + bad
