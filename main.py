@@ -34,10 +34,8 @@ class Main(object):
             archi = numerous_convolution
         elif model == 'origin1':
             archi = architecture.character_level_cnn_origin
-        elif model == 'charcnn1p':
-            archi = architecture.character_level_cnn_concatenate1p
-        elif model == 'charcnn3p':
-            archi = architecture.character_level_cnn_concatenate3p
+        elif model == 'bilstm':
+            archi = architecture.character_level_cnn_bilstm
         else:
             archi = simple
         # select whether to generate saliency map

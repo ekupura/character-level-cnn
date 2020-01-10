@@ -244,7 +244,7 @@ def character_level_cnn_origin(conf):
     #l1 = Embedding(input_dim=1, output_dim=number_of_characters, embeddings_initializer='random_normal',
     #               embeddings_regularizer=l2(0.01))(x)
     l1 = Lambda(lambda x: K.one_hot(K.cast(x, "int64"), num_classes=number_of_characters))(inputs)
-    emb = Reshape(target_shape=(limit_characters, number_of_characters))(l1)
+    emb = Reshape(target_shape=(limit_characters, number_of_characters), name='start')(l1)
     loop_num = 0
 
     # first_7_conv
@@ -283,77 +283,25 @@ def character_level_cnn_origin(conf):
     return Model(input=inputs, output=prediction)
 
 
-
-
-def character_level_cnn_concatenate3p(conf):
+def character_level_cnn_bilstm(conf):
     with tf.device("/cpu:0"):
         model_param, pre_param = conf["model_parameters"], conf["preprocessing_parameters"]
         limit_characters = pre_param["limit_characters"]
         number_of_characters = pre_param["number_of_characters"]
-        dropout_rate = 0.25
+        dropout_rate = 0.5
 
         # input layer
         inputs = Input(shape=(limit_characters, 1), dtype='int32')
         l1 = Lambda(lambda x: K.one_hot(K.cast(x, "int32"), num_classes=number_of_characters))(inputs)
-        emb = Reshape(target_shape=(number_of_characters, limit_characters))(l1)
+        x = Reshape(target_shape=(number_of_characters, limit_characters), name='start')(l1)
 
-        # 1st-conv
-        x = Conv1D(filters=256, kernel_size=3, padding='same',
-                           activation='relu', data_format='channels_first', name='embedding')(emb)
-        x = Reshape(target_shape=(160, 256))(x)
+        # conv
+        x = Conv1D(filters=256, kernel_size=7, padding='same', activation='relu', data_format='channels_first')(x)
+        x = BatchNormalization()(x)
+        x = Dropout(dropout_rate)(x)
         x = MaxPooling1D(pool_size=2, data_format='channels_first', padding='same')(x)
-        x = BatchNormalization()(x)
-        x = Dropout(dropout_rate)(x)
 
-        # 2nd
-        x2 = Reshape(target_shape=(128, 160))(x)
-        x2 = Conv1D(filters=128, kernel_size=3, padding='same',
-                                activation='relu', data_format='channels_first')(x2)
-        x2 = Reshape(target_shape=(160, 128))(x2)
-        x2 = MaxPooling1D(pool_size=2, data_format='channels_first', padding='same')(x2)
-        x2 = BatchNormalization()(x2)
-        x2 = Dropout(dropout_rate)(x2)
-
-        # 3rd
-        x3 = Reshape(target_shape=(64, 160))(x2)
-        x3 = Conv1D(filters=64, kernel_size=3, padding='same',
-                                activation='relu', data_format='channels_first')(x3)
-        x3 = Reshape(target_shape=(160, 64))(x3)
-        x3 = MaxPooling1D(pool_size=2, data_format='channels_first', padding='same')(x3)
-        x3 = BatchNormalization()(x3)
-        x3 = Dropout(dropout_rate)(x3)
-
-        # concentlate
-        x = Concatenate(axis=-1)([x, x2, x3])
-
-        x = Bidirectional(LSTM(200))(x)
-        x = BatchNormalization()(x)
-        x = Dropout(dropout_rate)(x)
-        prediction = Dense(2, activation='softmax', name='final')(x)
-
-    return Model(input=inputs, output=prediction)
-
-
-def character_level_cnn_concatenate1p(conf):
-    with tf.device("/cpu:0"):
-        model_param, pre_param = conf["model_parameters"], conf["preprocessing_parameters"]
-        limit_characters = pre_param["limit_characters"]
-        number_of_characters = pre_param["number_of_characters"]
-        dropout_rate = 0.25
-
-        # input layer
-        inputs = Input(shape=(limit_characters, 1), dtype='int32')
-        l1 = Lambda(lambda x: K.one_hot(K.cast(x, "int32"), num_classes=number_of_characters))(inputs)
-        emb = Reshape(target_shape=(number_of_characters, limit_characters))(l1)
-
-        # 1st-conv
-        x = Conv1D(filters=256, kernel_size=3, padding='same',
-                           activation='relu', data_format='channels_first', name='embedding')(emb)
-        x = Reshape(target_shape=(160, 256))(x)
-        x = MaxPooling1D(pool_size=2, data_format='channels_first', padding='same')(x)
-        x = BatchNormalization()(x)
-        x = Dropout(dropout_rate)(x)
-
+        # bilstm
         x = Bidirectional(LSTM(200))(x)
         x = BatchNormalization()(x)
         x = Dropout(dropout_rate)(x)

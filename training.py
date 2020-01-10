@@ -35,6 +35,7 @@ def train_with_saliency(conf, architecture=simple, verbose=1, multi_gpu=False):
     # parameter
     batch_size = conf["train_parameters"]["batch_size"]
     epochs = conf["train_parameters"]["epochs"]
+
     # generate model
     opt = Adam(lr=0.01)
     model_original = architecture(conf)
