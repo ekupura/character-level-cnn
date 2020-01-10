@@ -296,10 +296,10 @@ def character_level_cnn_bilstm(conf):
         x = Reshape(target_shape=(number_of_characters, limit_characters), name='start')(l1)
 
         # conv
-        x = Conv1D(filters=256, kernel_size=7, padding='same', activation='relu', data_format='channels_first')(x)
+        x = Conv1D(filters=256, kernel_size=7, padding='same', activation='relu')(x)
         x = BatchNormalization()(x)
         x = Dropout(dropout_rate)(x)
-        x = MaxPooling1D(pool_size=2, data_format='channels_first', padding='same')(x)
+        x = MaxPooling1D(pool_size=2, padding='valid')(x)
 
         # bilstm
         x = Bidirectional(LSTM(200))(x)
