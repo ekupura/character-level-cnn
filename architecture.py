@@ -236,7 +236,7 @@ def character_level_cnn_origin(conf):
     model_param, pre_param = conf["model_parameters"], conf["preprocessing_parameters"]
     limit_characters = pre_param["limit_characters"]
     number_of_characters = pre_param["number_of_characters"]
-    dropout_rate = 0.25
+    dropout_rate = 0.5
 
     # input layer
     inputs = Input(shape=(limit_characters, 1), dtype='int64')
@@ -248,7 +248,7 @@ def character_level_cnn_origin(conf):
     loop_num = 0
 
     # first_7_conv
-    x = Conv1D(filters=256, kernel_size=7, padding='same', activation='relu', name='embedding')(emb)
+    x = Conv1D(filters=256, kernel_size=7, padding='same', activation='relu')(emb)
     x = MaxPooling1D(pool_size=2, padding='valid')(x)
     x = BatchNormalization()(x)
     x = Dropout(dropout_rate)(x)
