@@ -288,6 +288,7 @@ def character_level_cnn_bilstm(conf):
         model_param, pre_param = conf["model_parameters"], conf["preprocessing_parameters"]
         limit_characters = pre_param["limit_characters"]
         number_of_characters = pre_param["number_of_characters"]
+        pooling = False if 'pooling' in model_param else model_param["pooling"]
         dropout_rate = 0.5
 
         # input layer
@@ -296,10 +297,20 @@ def character_level_cnn_bilstm(conf):
         x = Reshape(target_shape=(limit_characters, number_of_characters), name='start')(l1)
 
         # conv
-        x = Conv1D(filters=256, kernel_size=7, padding='same', activation='relu')(x)
-        x = BatchNormalization()(x)
-        x = Dropout(dropout_rate)(x)
-        x = MaxPooling1D(pool_size=2, padding='valid')(x)
+        for i in range(model_param["conv_7_loop"]):
+            x = Conv1D(filters=256, kernel_size=7, padding='same', activation='relu')(x)
+            if pooling:
+                x = MaxPooling1D(pool_size=2, padding='valid')(x)
+            x = BatchNormalization()(x)
+            x = Dropout(dropout_rate)(x)
+
+        for i in range(model_param["conv_3_loop"]):
+            x = Conv1D(filters=256, kernel_size=3, padding='same', activation='relu')(x)
+            if pooling:
+                x = MaxPooling1D(pool_size=2, padding='valid')(x)
+            x = MaxPooling1D(pool_size=2, padding='valid')(x)
+            x = BatchNormalization()(x)
+            x = Dropout(dropout_rate)(x)
 
         # bilstm
         x = Bidirectional(LSTM(200))(x)
