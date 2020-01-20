@@ -288,33 +288,26 @@ def character_level_cnn_bilstm(conf):
         model_param, pre_param = conf["model_parameters"], conf["preprocessing_parameters"]
         limit_characters = pre_param["limit_characters"]
         number_of_characters = pre_param["number_of_characters"]
-        pooling = False if not 'pooling' in model_param else model_param["pooling"]
-        dropout_rate = 0.5
 
         # input layer
         inputs = Input(shape=(limit_characters, 1), dtype='int32')
         l1 = Lambda(lambda x: K.one_hot(K.cast(x, "int32"), num_classes=number_of_characters))(inputs)
         x = Reshape(target_shape=(limit_characters, number_of_characters), name='start')(l1)
 
-        # conv
-        for i in range(model_param["conv_7_loop"]):
-            x = Conv1D(filters=256, kernel_size=7, padding='same', activation='relu')(x)
-            if pooling:
-                x = MaxPooling1D(pool_size=4, padding='valid')(x)
-            x = BatchNormalization()(x)
-            x = Dropout(dropout_rate)(x)
+        convolution_widths = model_param["convolution_widths"]
+        filter_sizes = model_param["filter_sizes"]
+        pooling_sizes = model_param["pooling_sizes"]
 
-        for i in range(model_param["conv_3_loop"]):
-            x = Conv1D(filters=256, kernel_size=3, padding='same', activation='relu')(x)
-            if pooling:
-                x = MaxPooling1D(pool_size=2, padding='valid')(x)
+        # convolution
+        for i in range(len(convolution_widths)):
+            x = Conv1D(filters=filter_sizes[i], kernel_size=convolution_widths[i],
+                       padding='same', activation='relu')(x)
+            x = MaxPooling1D(pool_size=pooling_sizes[i], padding='valid')(x)
             x = BatchNormalization()(x)
-            x = Dropout(dropout_rate)(x)
 
         # bilstm
-        x = Bidirectional(LSTM(200))(x)
+        x = Bidirectional(LSTM(128))(x)
         x = BatchNormalization()(x)
-        x = Dropout(dropout_rate)(x)
         prediction = Dense(2, activation='softmax', name='final')(x)
 
     return Model(input=inputs, output=prediction)
