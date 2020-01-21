@@ -16,7 +16,7 @@ class Main(object):
     def __init__(self):
         pass
 
-    def train(self, conf_path, prep=False, aug=False, multi_gpu=False, verbose=1):
+    def train(self, conf_path, prep=False, aug=False, multi_gpu=False, debug=False, verbose=1):
         configuration = self._load_configuration(conf_path)
         model = configuration["model_parameters"]["architecture"]
         data_type = configuration["preprocessing_parameters"]["architecture"]
@@ -39,7 +39,7 @@ class Main(object):
         else:
             archi = simple
         # select whether to generate saliency map
-        training.train_with_saliency(configuration, archi, verbose, multi_gpu)
+        training.train_model(configuration, archi, verbose, multi_gpu, debug)
 
     def generate_saliency_gif(self, configuration_path):
         configuration = self._load_configuration(configuration_path)

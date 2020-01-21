@@ -1,15 +1,9 @@
 from keras.models import Model, load_model
-from keras.layers import Input, Dense, Conv2D, Dropout, MaxPooling2D, Lambda, Embedding, Reshape, Activation, Flatten
 from keras.optimizers import SGD, Adam, RMSprop
 from keras.callbacks import EarlyStopping, TensorBoard, ModelCheckpoint
-from keras.utils import np_utils
-import keras.backend as K
 from sklearn.model_selection import train_test_split
-import tensorflow as tf
-import keras.backend.tensorflow_backend as ktf
 import numpy as np
 import pickle
-from layer import CharacterEmbeddingLayer
 from architecture import simple
 from callbacks import EpochSaliency, GifSaliency
 from copy import deepcopy
@@ -30,7 +24,7 @@ def load_dataset(conf):
     return dataset['x_train'], dataset['y_train'], dataset['x_test'], dataset['y_test']
 
 
-def train_with_saliency(conf, architecture=simple, verbose=1, multi_gpu=False):
+def train_model(conf, architecture=simple, verbose=1, multi_gpu=False, debug=False):
     x, y, x_test, y_test = load_dataset(conf)
     # parameter
     batch_size = conf["train_parameters"]["batch_size"]
@@ -52,8 +46,11 @@ def train_with_saliency(conf, architecture=simple, verbose=1, multi_gpu=False):
     model.compile(loss='categorical_crossentropy', optimizer=opt, metrics=['accuracy'])
     model.summary()
 
-    #x, y = x[:50000], y[:50000]
-    #x_test, y_test = x_test[:50000], y_test[:50000]
+    if debug:
+        epochs = 3
+        x, y = x[:50000], y[:50000]
+        x_test, y_test = x_test[:50000], y_test[:50000]
+
     x_t, x_val, y_t, y_val = train_test_split(x, y, test_size=0.1, random_state=0)
 
     # random choice
@@ -80,17 +77,17 @@ def train_with_saliency(conf, architecture=simple, verbose=1, multi_gpu=False):
     result = model.fit(x_t, y_t, epochs=epochs, batch_size=batch_size, callbacks=cb,
                        verbose=verbose, validation_data=(x_val, y_val))
     model_original.save(conf["paths"]["model_path"])
-    print(result.history)
-    print("=======" * 12, end="\n\n\n")
 
     with open(conf['paths']['log_dir_path'] + 'result.pkl', 'wb') as f:
         pickle.dump(result.history, f)
 
+    print(result.history)
+    print("=======" * 12, end="\n\n\n")
     # test
     x_test = x_test.reshape(*x_test.shape, 1)
     score = model_original.evaluate(x=x_test, y=y_test, batch_size=1024, verbose=verbose)
     print(list(zip(model.metrics_names, score)))
-
+    print("final_acc:{}, final_vac_acc: {}".format(result.history["acc"][-1], result.history["val_acc"][-1]))
 
 def test(x, y, conf):
     batch_size = conf["train_parameters"]["batch_size"]
