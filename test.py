@@ -15,11 +15,13 @@ def test_accuracy(confs):
         experiment_name = conf["experiment_name"]
         with open(pre_path, "rb") as f:
             dataset = pickle.load(f)
-        layer_dict = {'CharacterEmbeddingLayer': CharacterEmbeddingLayer}
+        #layer_dict = {'CharacterEmbeddingLayer': CharacterEmbeddingLayer}
+        layer_dict = {}
         model = load_model(model_path, custom_objects=layer_dict)
 
         print(experiment_name)
-        x_test = np_utils.to_categorical(dataset['x_test'])
+        # x_test = np_utils.to_categorical(dataset['x_test'])
+        x_test = (dataset['x_test'])
         x_test = x_test.reshape(*x_test.shape, 1)
         y_test = dataset['y_test']
         score = model.evaluate(x_test, y_test)
@@ -33,7 +35,7 @@ def plot_loss_and_acc(confs):
             conf = yaml.load(f)
         log_path = conf["paths"]["log_dir_path"]
         experiment_name = conf["experiment_name"]
-        with open(log_path + "result0.pkl", "rb") as f:
+        with open(log_path + "result.pkl", "rb") as f:
             results[experiment_name] = pickle.load(f)
 
     # val_loss
@@ -67,10 +69,10 @@ def plot_loss_and_acc(confs):
 
 
 if __name__ == '__main__':
-    simple1 = "./experiment/simpleconv_01/configuration.yml"
-    simple2 = "./experiment/simpleconv_02/configuration.yml"
-    simple3 = "./experiment/simpleconv_03/configuration.yml"
-    two = "./experiment/twoconv_03/configuration.yml"
-    confs = [simple1, simple2, simple3, two]
+    model1 = "./experiment/origin2_1/configuration.yml"
+    model2 = "./experiment/origin2_2/configuration.yml"
+    model3 = "./experiment/origin2_3/configuration.yml"
+    model4 = "./experiment/origin2_4/configuration.yml"
+    confs = [model1, model2, model3, model4]
     plot_loss_and_acc(confs)
-    test_accuracy(confs)
+    #test_accuracy(confs)
