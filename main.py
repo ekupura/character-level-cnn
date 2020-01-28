@@ -36,6 +36,10 @@ class Main(object):
             archi = architecture.character_level_cnn_origin
         elif model == 'bilstm':
             archi = architecture.character_level_cnn_bilstm
+        elif model == 'parallel':
+            archi = architecture.character_level_cnn_parallel
+        elif model == 'serial':
+            archi = architecture.character_level_cnn_serial
         else:
             archi = simple
         # select whether to generate saliency map

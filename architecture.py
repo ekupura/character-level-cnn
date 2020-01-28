@@ -315,3 +315,76 @@ def character_level_cnn_bilstm(conf):
     prediction = Dense(2, activation='softmax', name='final')(x)
 
     return Model(input=inputs, output=prediction)
+
+
+def character_level_cnn_parallel(conf):
+    model_param, pre_param = conf["model_parameters"], conf["preprocessing_parameters"]
+    limit_characters = pre_param["limit_characters"]
+    number_of_characters = pre_param["number_of_characters"]
+
+    # input layer
+    inputs = Input(shape=(limit_characters, 1), dtype='int32')
+    l1 = Lambda(lambda x: K.one_hot(K.cast(x, "int32"), num_classes=number_of_characters))(inputs)
+    r = Reshape(target_shape=(limit_characters, number_of_characters), name='start')(l1)
+
+    convolution_widths = model_param["convolution_widths"]
+    filter_sizes = model_param["filter_sizes"]
+    pooling_sizes = model_param["pooling_sizes"]
+    dense_size = model_param["dense_size"]
+    use_bn = [True for i in range(len(convolution_widths))] if "use_bn" not in model_param else model_param["use_bn"]
+
+    c = []
+    # convolution
+    for i in range(len(convolution_widths)):
+        x = Conv1D(filters=filter_sizes[i], kernel_size=convolution_widths[i],
+                   padding='same', activation='relu',
+                   kernel_regularizer=l2(5e-4), bias_regularizer=l2(5e-4))(r)
+        if pooling_sizes[i] > 1:
+            x = MaxPooling1D(pool_size=pooling_sizes[i], padding='valid')(x)
+        if use_bn[i]:
+            x = BatchNormalization()(x)
+        c.append(x)
+
+    # concatenate
+    x = Concatenate()(c)
+    for i in range(3):
+        x = Dense(dense_size, activation='relu', kernel_regularizer=l2(0.01), bias_regularizer=l2(0.01))(x)
+        x = BatchNormalization()(x)
+    prediction = Dense(2, activation='softmax', name='final')(x)
+
+    return Model(input=inputs, output=prediction)
+
+
+def character_level_cnn_serial(conf):
+    model_param, pre_param = conf["model_parameters"], conf["preprocessing_parameters"]
+    limit_characters = pre_param["limit_characters"]
+    number_of_characters = pre_param["number_of_characters"]
+
+    # input layer
+    inputs = Input(shape=(limit_characters, 1), dtype='int32')
+    l1 = Lambda(lambda x: K.one_hot(K.cast(x, "int32"), num_classes=number_of_characters))(inputs)
+    x = Reshape(target_shape=(limit_characters, number_of_characters), name='start')(l1)
+
+    convolution_widths = model_param["convolution_widths"]
+    filter_sizes = model_param["filter_sizes"]
+    pooling_sizes = model_param["pooling_sizes"]
+    dense_size = model_param["dense_size"]
+    use_bn = [True for i in range(len(convolution_widths))] if "use_bn" not in model_param else model_param["use_bn"]
+
+    # convolution
+    for i in range(len(convolution_widths)):
+        x = Conv1D(filters=filter_sizes[i], kernel_size=convolution_widths[i],
+                   padding='same', activation='relu',
+                   kernel_regularizer=l2(5e-4), bias_regularizer=l2(5e-4))(x)
+        if pooling_sizes[i] > 1:
+            x = MaxPooling1D(pool_size=pooling_sizes[i], padding='valid')(x)
+        if use_bn[i]:
+            x = BatchNormalization()(x)
+
+    # dense
+    for i in range(3):
+        x = Dense(dense_size, activation='relu', kernel_regularizer=l2(0.01), bias_regularizer=l2(0.01))(x)
+        x = BatchNormalization()(x)
+    prediction = Dense(2, activation='softmax', name='final')(x)
+
+    return Model(input=inputs, output=prediction)
