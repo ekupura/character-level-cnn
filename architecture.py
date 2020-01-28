@@ -284,34 +284,34 @@ def character_level_cnn_origin(conf):
 
 
 def character_level_cnn_bilstm(conf):
-    with tf.device("/cpu:0"):
-        model_param, pre_param = conf["model_parameters"], conf["preprocessing_parameters"]
-        limit_characters = pre_param["limit_characters"]
-        number_of_characters = pre_param["number_of_characters"]
+    model_param, pre_param = conf["model_parameters"], conf["preprocessing_parameters"]
+    limit_characters = pre_param["limit_characters"]
+    number_of_characters = pre_param["number_of_characters"]
 
-        # input layer
-        inputs = Input(shape=(limit_characters, 1), dtype='int32')
-        l1 = Lambda(lambda x: K.one_hot(K.cast(x, "int32"), num_classes=number_of_characters))(inputs)
-        x = Reshape(target_shape=(limit_characters, number_of_characters), name='start')(l1)
+    # input layer
+    inputs = Input(shape=(limit_characters, 1), dtype='int32')
+    l1 = Lambda(lambda x: K.one_hot(K.cast(x, "int32"), num_classes=number_of_characters))(inputs)
+    x = Reshape(target_shape=(limit_characters, number_of_characters), name='start')(l1)
 
-        convolution_widths = model_param["convolution_widths"]
-        filter_sizes = model_param["filter_sizes"]
-        pooling_sizes = model_param["pooling_sizes"]
-        use_bn = [False for i in range(len(convolution_widths))] if "use_bn" not in model_param else model_param["use_bn"]
+    convolution_widths = model_param["convolution_widths"]
+    filter_sizes = model_param["filter_sizes"]
+    pooling_sizes = model_param["pooling_sizes"]
+    use_bn = [True for i in range(len(convolution_widths))] if "use_bn" not in model_param else model_param["use_bn"]
 
-        # convolution
-        for i in range(len(convolution_widths)):
-            x = Conv1D(filters=filter_sizes[i], kernel_size=convolution_widths[i],
-                       padding='same', activation='relu',
-                       kernel_regularizer=l2(5e-4), bias_regularizer=l2(5e-4))(x)
+    # convolution
+    for i in range(len(convolution_widths)):
+        x = Conv1D(filters=filter_sizes[i], kernel_size=convolution_widths[i],
+                   padding='same', activation='relu',
+                   kernel_regularizer=l2(5e-4), bias_regularizer=l2(5e-4))(x)
+        if pooling_sizes[i] > 1:
             x = MaxPooling1D(pool_size=pooling_sizes[i], padding='valid')(x)
-            if use_bn[i]:
-                x = BatchNormalization()(x)
+        if use_bn[i]:
+            x = BatchNormalization()(x)
 
-        # bilstm
-        lstm_size = 128 if "lstm_size" not in model_param else model_param["lstm_size"]
-        x = Bidirectional(LSTM(lstm_size, kernel_regularizer=l2(1e-6), bias_regularizer=l2(1e-6)))(x)
-        x = BatchNormalization()(x)
-        prediction = Dense(2, activation='softmax', name='final')(x)
+    # bilstm
+    lstm_size = 128 if "lstm_size" not in model_param else model_param["lstm_size"]
+    x = Bidirectional(LSTM(lstm_size, kernel_regularizer=l2(1e-6), bias_regularizer=l2(1e-6)))(x)
+    x = BatchNormalization()(x)
+    prediction = Dense(2, activation='softmax', name='final')(x)
 
     return Model(input=inputs, output=prediction)
