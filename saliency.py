@@ -19,7 +19,7 @@ class GradientSaliency:
         # Define the function to compute the gradient
         self.limit_characters = limit_characters
         out_layer_idx = utils.find_layer_idx(model, 'final')
-        in_layer_idx = utils.find_layer_idx(model, 'start')
+        in_layer_idx = utils.find_layer_idx(model, 'conv1d_1')
         output_index = int(label[0])
         input_tensors = [model.input]
         gradients = model.optimizer.get_gradients(model.layers[out_layer_idx].output[0][output_index],

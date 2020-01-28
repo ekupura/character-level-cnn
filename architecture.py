@@ -297,16 +297,20 @@ def character_level_cnn_bilstm(conf):
         convolution_widths = model_param["convolution_widths"]
         filter_sizes = model_param["filter_sizes"]
         pooling_sizes = model_param["pooling_sizes"]
+        use_bn = [False for i in range(len(convolution_widths))] if "use_bn" not in model_param else model_param["use_bn"]
 
         # convolution
         for i in range(len(convolution_widths)):
             x = Conv1D(filters=filter_sizes[i], kernel_size=convolution_widths[i],
-                       padding='same', activation='relu')(x)
+                       padding='same', activation='relu',
+                       kernel_regularizer=l2(5e-4), bias_regularizer=l2(5e-4))(x)
             x = MaxPooling1D(pool_size=pooling_sizes[i], padding='valid')(x)
-            x = BatchNormalization()(x)
+            if use_bn[i]:
+                x = BatchNormalization()(x)
 
         # bilstm
-        x = Bidirectional(LSTM(128))(x)
+        lstm_size = 128 if "lstm_size" not in model_param else model_param["lstm_size"]
+        x = Bidirectional(LSTM(lstm_size, kernel_regularizer=l2(1e-6), bias_regularizer=l2(1e-6)))(x)
         x = BatchNormalization()(x)
         prediction = Dense(2, activation='softmax', name='final')(x)
 
