@@ -347,6 +347,7 @@ def character_level_cnn_parallel(conf):
 
     # concatenate
     x = Concatenate()(c)
+    x = Flatten()(x)
     for i in range(3):
         x = Dense(dense_size, activation='relu', kernel_regularizer=l2(0.01), bias_regularizer=l2(0.01))(x)
         x = BatchNormalization()(x)
@@ -382,6 +383,7 @@ def character_level_cnn_serial(conf):
             x = BatchNormalization()(x)
 
     # dense
+    x = Flatten()(x)
     for i in range(3):
         x = Dense(dense_size, activation='relu', kernel_regularizer=l2(0.01), bias_regularizer=l2(0.01))(x)
         x = BatchNormalization()(x)
