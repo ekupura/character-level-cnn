@@ -297,12 +297,14 @@ def character_level_cnn_bilstm(conf):
     filter_sizes = model_param["filter_sizes"]
     pooling_sizes = model_param["pooling_sizes"]
     use_bn = [True for i in range(len(convolution_widths))] if "use_bn" not in model_param else model_param["use_bn"]
+    cnn_regularizer = l2(1e-7) if "cnn_regularizer" not in model_param else l2(model_param["cnn_regularizer"])
+    lstm_regularizer = l2(1e-6) if "lstm_regularizer" not in model_param else l2(model_param["lstm_regularizer"])
 
     # convolution
     for i in range(len(convolution_widths)):
         x = Conv1D(filters=filter_sizes[i], kernel_size=convolution_widths[i],
                    padding='same', activation='relu',
-                   kernel_regularizer=l2(1e-7), bias_regularizer=l2(1e-7))(x)
+                   kernel_regularizer=cnn_regularizer, bias_regularizer=cnn_regularizer)(x)
         if pooling_sizes[i] > 1:
             x = MaxPooling1D(pool_size=pooling_sizes[i], padding='valid')(x)
         if use_bn[i]:
@@ -310,7 +312,7 @@ def character_level_cnn_bilstm(conf):
 
     # bilstm
     lstm_size = 128 if "lstm_size" not in model_param else model_param["lstm_size"]
-    x = Bidirectional(LSTM(lstm_size, kernel_regularizer=l2(1e-6), bias_regularizer=l2(1e-6)))(x)
+    x = Bidirectional(LSTM(lstm_size, kernel_regularizer=lstm_regularizer, bias_regularizer=lstm_regularizer))(x)
     x = BatchNormalization()(x)
     prediction = Dense(2, activation='softmax', name='final')(x)
 
@@ -332,13 +334,14 @@ def character_level_cnn_parallel(conf):
     pooling_sizes = model_param["pooling_sizes"]
     dense_size = model_param["dense_size"]
     use_bn = [True for i in range(len(convolution_widths))] if "use_bn" not in model_param else model_param["use_bn"]
+    cnn_regularizer = l2(1e-7) if "cnn_regularizer" not in model_param else l2(model_param["cnn_regularizer"])
 
     c = []
     # convolution
     for i in range(len(convolution_widths)):
         x = Conv1D(filters=filter_sizes[i], kernel_size=convolution_widths[i],
                    padding='same', activation='relu',
-                   kernel_regularizer=l2(1e-6), bias_regularizer=l2(1e-6))(r)
+                   kernel_regularizer=cnn_regularizer, bias_regularizer=cnn_regularizer)(r)
         if pooling_sizes[i] > 1:
             x = MaxPooling1D(pool_size=pooling_sizes[i], padding='valid')(x)
         if use_bn[i]:
@@ -371,12 +374,13 @@ def character_level_cnn_serial(conf):
     pooling_sizes = model_param["pooling_sizes"]
     dense_size = model_param["dense_size"]
     use_bn = [True for i in range(len(convolution_widths))] if "use_bn" not in model_param else model_param["use_bn"]
+    cnn_regularizer = l2(1e-7) if "cnn_regularizer" not in model_param else l2(model_param["cnn_regularizer"])
 
     # convolution
     for i in range(len(convolution_widths)):
         x = Conv1D(filters=filter_sizes[i], kernel_size=convolution_widths[i],
                    padding='same', activation='relu',
-                   kernel_regularizer=l2(5e-4), bias_regularizer=l2(5e-4))(x)
+                   kernel_regularizer=cnn_regularizer, bias_regularizer=cnn_regularizer)(x)
         if pooling_sizes[i] > 1:
             x = MaxPooling1D(pool_size=pooling_sizes[i], padding='valid')(x)
         if use_bn[i]:
