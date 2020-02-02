@@ -302,7 +302,7 @@ def character_level_cnn_bilstm(conf):
     for i in range(len(convolution_widths)):
         x = Conv1D(filters=filter_sizes[i], kernel_size=convolution_widths[i],
                    padding='same', activation='relu',
-                   kernel_regularizer=l2(5e-4), bias_regularizer=l2(5e-4))(x)
+                   kernel_regularizer=l2(1e-7), bias_regularizer=l2(1e-7))(x)
         if pooling_sizes[i] > 1:
             x = MaxPooling1D(pool_size=pooling_sizes[i], padding='valid')(x)
         if use_bn[i]:
@@ -338,7 +338,7 @@ def character_level_cnn_parallel(conf):
     for i in range(len(convolution_widths)):
         x = Conv1D(filters=filter_sizes[i], kernel_size=convolution_widths[i],
                    padding='same', activation='relu',
-                   kernel_regularizer=l2(5e-4), bias_regularizer=l2(5e-4))(r)
+                   kernel_regularizer=l2(1e-6), bias_regularizer=l2(1e-6))(r)
         if pooling_sizes[i] > 1:
             x = MaxPooling1D(pool_size=pooling_sizes[i], padding='valid')(x)
         if use_bn[i]:
