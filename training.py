@@ -26,12 +26,12 @@ def load_dataset_kfold(conf, k):
 
 
 def train_model(conf, architecture=simple, verbose=1, multi_gpu=False, debug=False):
-    x, y, x_test, y_test = load_dataset(conf)
     # parameter
     batch_size = conf["train_parameters"]["batch_size"]
     epochs = conf["train_parameters"]["epochs"]
 
     # generate model
+    x, y, x_test, y_test = load_dataset(conf)
     opt = Adam(lr=0.001)
     model_original = architecture(conf)
     for layer in model_original.layers:
@@ -48,9 +48,11 @@ def train_model(conf, architecture=simple, verbose=1, multi_gpu=False, debug=Fal
     model.summary()
 
     if debug:
-        epochs = 3
-        x, y = x[:50000], y[:50000]
-        x_test, y_test = x_test[:50000], y_test[:50000]
+        epochs = 1
+        deb_idx = random.sample(range(len(x)), 10000)
+        x, y = x[deb_idx], y[deb_idx]
+        deb_idx = random.sample(range(len(x)), 100)
+        x_test, y_test = x_test[deb_idx], y_test[deb_idx]
 
     x_t, x_val, y_t, y_val = train_test_split(x, y, test_size=0.1, random_state=0)
 
@@ -67,14 +69,11 @@ def train_model(conf, architecture=simple, verbose=1, multi_gpu=False, debug=Fal
     # callbacks
     epoch_saliency = GifSaliency(conf, sample, label, gif=False)
     paths = conf["paths"]
-    # early_stopping = EarlyStopping(monitor='val_loss', patience=5, verbose=1)
     tensor_board = TensorBoard(log_dir=paths["log_dir_path"], histogram_freq=0)
     if multi_gpu:
         model_checkpoint = AltModelCheckpoint(paths["model_path"], model_original, verbose=1, save_best_only=True)
     else:
         model_checkpoint = ModelCheckpoint(paths["model_path"], verbose=1, save_best_only=True)
-    # cb = [epoch_saliency, early_stopping, model_checkpoint, tensor_board]
-    # cb = [early_stopping, model_checkpoint, tensor_board]
     cb = [model_checkpoint, tensor_board]
 
     # train
@@ -85,13 +84,14 @@ def train_model(conf, architecture=simple, verbose=1, multi_gpu=False, debug=Fal
     with open(conf['paths']['log_dir_path'] + 'result.pkl', 'wb') as f:
         pickle.dump(result.history, f)
 
-    print(result.history)
-    print("=======" * 12, end="\n\n\n")
+    print("\n" + "===============================================================================" * 2)
+    pprint(result.history)
     # test
     x_test = x_test.reshape(*x_test.shape, 1)
-    score = model_original.evaluate(x=x_test, y=y_test, batch_size=1024, verbose=verbose)
-    print(list(zip(model.metrics_names, score)))
-    print("final_acc:{}, final_val_acc: {}".format(result.history["acc"][-1], result.history["val_acc"][-1]))
+    score_train = model_original.evaluate(x=x_t, y=y_t, batch_size=1024, verbose=verbose)
+    score_test = model_original.evaluate(x=x_test, y=y_test, batch_size=1024, verbose=verbose)
+    print("train loss: {}, train acc: {}, test loss: {}, test acc: {}".format(*score_train, *score_test))
+    print("\n" + "===============================================================================" * 2)
 
 
 def train_model_kfold(conf, architecture=simple, verbose=1, multi_gpu=False, debug=False):

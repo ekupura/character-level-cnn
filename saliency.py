@@ -12,6 +12,7 @@ from layer import CharacterEmbeddingLayer
 from preprocessing import id_list_to_characters
 from matplotlib import animation
 from tqdm import tqdm
+import time
 
 
 class GradientSaliency:
@@ -48,12 +49,9 @@ def calculate_saliency(conf, sample, label, model=None):
 
     saliency = GradientSaliency(model, label, conf['preprocessing_parameters']['limit_characters'])
     matrix = saliency.get_mask(sample)
-    saliency.delete()
     if matrix is None:
         matrix = np.zeros((160, 67))
-    del(saliency)
     matrix[matrix < 0.0] = 0.0
-
     return np.mean((matrix.reshape(160, 67)), axis=1)
 
 def calculate_saliency_multi(conf, samples, labels, model):
@@ -112,7 +110,7 @@ def generate_heatmap(conf, saliency, id_list, epoch=None, path=None, z_norm=Fals
     if epoch is None:
         plt.title(conf["experiment_name"])
     else:
-        plt.title("{},epoch={}".format(conf["experiment_name"], epoch))
+        plt.title("{},label={}".format(conf["experiment_name"], epoch))
 
 
     #plt.colorbar()

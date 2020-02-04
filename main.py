@@ -6,10 +6,11 @@ import preprocessing
 import training
 import architecture
 from saliency import calculate_saliency, generate_animation_heatmap, calculate_saliency_with_vis
-from evaluation import Evaluation
+from evaluate import Evaluation
 from architecture import simple, two_convolution, numerous_convolution
 import architecture
 from layer import CharacterEmbeddingLayer
+import time
 
 
 class Main(object):
@@ -49,6 +50,8 @@ class Main(object):
             archi = architecture.character_level_cnn_parallel
         elif model == 'serial':
             archi = architecture.character_level_cnn_serial
+        elif model == 'serialparallel':
+            archi = architecture.character_level_cnn_serial_and_parallel
         else:
             archi = simple
         # select whether to generate saliency map
@@ -65,15 +68,12 @@ class Main(object):
             for i, j, k, l in zip(data[0], data[1], data[2], data[3]):
                 generate_animation_heatmap(configuration, i, j, k, l)
 
-    def test_evaluation(self, configuration_path):
-        configuration = self._load_configuration(configuration_path)
-        evaluation = Evaluation()
-        evaluation.single_keyword_evaluation(configuration)
 
-    def do_simple_evaluation(self, conf_path):
+    def keyword_evaluation(self, conf_path):
         configuration = self._load_configuration(conf_path)
+        keywords = ["good", "congratulation", "people", "time"]
         evaluation = Evaluation()
-        evaluation.good_and_bad_evaluation(configuration)
+        evaluation.keyword_evaluation(configuration, keywords, 20)
 
     def _load_configuration(self, configuration_path):
         print("Load configuration")
