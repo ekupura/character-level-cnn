@@ -8,6 +8,7 @@ from layer import CharacterEmbeddingLayer
 import tensorflow as tf
 import keras.backend as K
 import numpy as np
+from pprint import pprint
 
 
 def simple(conf):
@@ -287,18 +288,21 @@ def character_level_cnn_bilstm(conf):
     model_param, pre_param = conf["model_parameters"], conf["preprocessing_parameters"]
     limit_characters = pre_param["limit_characters"]
     number_of_characters = pre_param["number_of_characters"]
-
-    # input layer
-    inputs = Input(shape=(limit_characters, 1), dtype='int32')
-    l1 = Lambda(lambda x: K.one_hot(K.cast(x, "int32"), num_classes=number_of_characters))(inputs)
-    x = Reshape(target_shape=(limit_characters, number_of_characters), name='start')(l1)
-
     convolution_widths = model_param["convolution_widths"]
     filter_sizes = model_param["filter_sizes"]
     pooling_sizes = model_param["pooling_sizes"]
     use_bn = [True for i in range(len(convolution_widths))] if "use_bn" not in model_param else model_param["use_bn"]
     cnn_regularizer = l2(1e-7) if "cnn_regularizer" not in model_param else l2(model_param["cnn_regularizer"])
     lstm_regularizer = l2(1e-6) if "lstm_regularizer" not in model_param else l2(model_param["lstm_regularizer"])
+    params = {'conv_w': convolution_widths, 'fil_s': filter_sizes, 'pool_s': pooling_sizes, "use_bn": use_bn,
+              "cnn_reg": cnn_regularizer, "lstm_reg": lstm_regularizer}
+    pprint(params)
+
+    # input layer
+    inputs = Input(shape=(limit_characters, 1), dtype='int32')
+    l1 = Lambda(lambda x: K.one_hot(K.cast(x, "int32"), num_classes=number_of_characters))(inputs)
+    x = Reshape(target_shape=(limit_characters, number_of_characters), name='start')(l1)
+
 
     # convolution
     for i in range(len(convolution_widths)):
@@ -335,6 +339,9 @@ def character_level_cnn_parallel(conf):
     dense_size = model_param["dense_size"]
     use_bn = [True for i in range(len(convolution_widths))] if "use_bn" not in model_param else model_param["use_bn"]
     cnn_regularizer = l2(1e-7) if "cnn_regularizer" not in model_param else l2(model_param["cnn_regularizer"])
+    params = {'conv_w': convolution_widths, 'fil_s': filter_sizes, 'pool_s': pooling_sizes, "use_bn": use_bn,
+              "cnn_reg": cnn_regularizer}
+    pprint(params)
 
     c = []
     # convolution
@@ -375,6 +382,9 @@ def character_level_cnn_serial(conf):
     dense_size = model_param["dense_size"]
     use_bn = [True for i in range(len(convolution_widths))] if "use_bn" not in model_param else model_param["use_bn"]
     cnn_regularizer = l2(1e-7) if "cnn_regularizer" not in model_param else l2(model_param["cnn_regularizer"])
+    params = {'conv_w': convolution_widths, 'fil_s': filter_sizes, 'pool_s': pooling_sizes, "use_bn": use_bn,
+              "cnn_reg": cnn_regularizer}
+    pprint(params)
 
     # convolution
     for i in range(len(convolution_widths)):

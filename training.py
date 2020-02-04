@@ -91,7 +91,7 @@ def train_model(conf, architecture=simple, verbose=1, multi_gpu=False, debug=Fal
     x_test = x_test.reshape(*x_test.shape, 1)
     score = model_original.evaluate(x=x_test, y=y_test, batch_size=1024, verbose=verbose)
     print(list(zip(model.metrics_names, score)))
-    print("final_acc:{}, final_vac_acc: {}".format(result.history["acc"][-1], result.history["val_acc"][-1]))
+    print("final_acc:{}, final_val_acc: {}".format(result.history["acc"][-1], result.history["val_acc"][-1]))
 
 def test(x, y, conf):
     batch_size = conf["train_parameters"]["batch_size"]
