@@ -295,7 +295,7 @@ def character_level_cnn_bilstm(conf):
     cnn_regularizer = l2(1e-7) if "cnn_regularizer" not in model_param else l2(model_param["cnn_regularizer"])
     lstm_regularizer = l2(1e-6) if "lstm_regularizer" not in model_param else l2(model_param["lstm_regularizer"])
     params = {'conv_w': convolution_widths, 'fil_s': filter_sizes, 'pool_s': pooling_sizes, "use_bn": use_bn,
-              "cnn_reg": cnn_regularizer, "lstm_reg": lstm_regularizer}
+              "cnn_reg": cnn_regularizer.l2, "lstm_reg": lstm_regularizer.l2}
     pprint(params)
 
     # input layer
@@ -340,7 +340,7 @@ def character_level_cnn_parallel(conf):
     use_bn = [True for i in range(len(convolution_widths))] if "use_bn" not in model_param else model_param["use_bn"]
     cnn_regularizer = l2(1e-7) if "cnn_regularizer" not in model_param else l2(model_param["cnn_regularizer"])
     params = {'conv_w': convolution_widths, 'fil_s': filter_sizes, 'pool_s': pooling_sizes, "use_bn": use_bn,
-              "cnn_reg": cnn_regularizer}
+              "cnn_reg": cnn_regularizer.l2}
     pprint(params)
 
     c = []
@@ -383,7 +383,7 @@ def character_level_cnn_serial(conf):
     use_bn = [True for i in range(len(convolution_widths))] if "use_bn" not in model_param else model_param["use_bn"]
     cnn_regularizer = l2(1e-7) if "cnn_regularizer" not in model_param else l2(model_param["cnn_regularizer"])
     params = {'conv_w': convolution_widths, 'fil_s': filter_sizes, 'pool_s': pooling_sizes, "use_bn": use_bn,
-              "cnn_reg": cnn_regularizer}
+              "cnn_reg": cnn_regularizer.l2}
     pprint(params)
 
     # convolution
@@ -397,6 +397,52 @@ def character_level_cnn_serial(conf):
             x = BatchNormalization()(x)
 
     # dense
+    x = Flatten()(x)
+    for i in range(3):
+        x = Dense(dense_size, activation='relu', kernel_regularizer=l2(0.01), bias_regularizer=l2(0.01))(x)
+        x = BatchNormalization()(x)
+    prediction = Dense(2, activation='softmax', name='final')(x)
+
+    return Model(input=inputs, output=prediction)
+
+
+def character_level_cnn_serial_and_parallel(conf):
+    model_param, pre_param = conf["model_parameters"], conf["preprocessing_parameters"]
+    limit_characters = pre_param["limit_characters"]
+    number_of_characters = pre_param["number_of_characters"]
+
+    # input layer
+    inputs = Input(shape=(limit_characters, 1), dtype='int32')
+    l1 = Lambda(lambda x: K.one_hot(K.cast(x, "int32"), num_classes=number_of_characters))(inputs)
+    r = Reshape(target_shape=(limit_characters, number_of_characters), name='start')(l1)
+
+    convolution_widths = model_param["convolution_widths"]
+    filter_sizes = model_param["filter_sizes"]
+    pooling_sizes = model_param["pooling_sizes"]
+    dense_size = model_param["dense_size"]
+    use_bn = [True for i in range(len(convolution_widths))] if "use_bn" not in model_param else model_param["use_bn"]
+    cnn_regularizer = l2(1e-7) if "cnn_regularizer" not in model_param else l2(model_param["cnn_regularizer"])
+    params = {'conv_w': convolution_widths, 'fil_s': filter_sizes, 'pool_s': pooling_sizes, "use_bn": use_bn,
+              "cnn_reg": cnn_regularizer.l2}
+    pprint(params)
+
+    c = []
+    # convolution
+    seq = convolution_widths[0]
+    for i in range(len(convolution_widths[1])):
+        x = r
+        for j in range(seq):
+            x = Conv1D(filters=filter_sizes[i], kernel_size=convolution_widths[i],
+                       padding='same', activation='relu',
+                       kernel_regularizer=cnn_regularizer, bias_regularizer=cnn_regularizer)(x)
+            if pooling_sizes[i] > 1:
+                x = MaxPooling1D(pool_size=pooling_sizes[i], padding='valid')(x)
+            if use_bn[i]:
+                x = BatchNormalization()(x)
+        c.append(x)
+
+    # concatenate
+    x = Concatenate()(c)
     x = Flatten()(x)
     for i in range(3):
         x = Dense(dense_size, activation='relu', kernel_regularizer=l2(0.01), bias_regularizer=l2(0.01))(x)
