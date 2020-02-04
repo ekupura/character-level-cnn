@@ -9,6 +9,7 @@ from callbacks import EpochSaliency, GifSaliency
 from copy import deepcopy
 import random
 from keras.utils.training_utils import multi_gpu_model
+from alt_model_checkpoint.keras import AltModelCheckpoint
 
 def callbacks(paths):
     # configure callback function
@@ -31,7 +32,7 @@ def train_model(conf, architecture=simple, verbose=1, multi_gpu=False, debug=Fal
     epochs = conf["train_parameters"]["epochs"]
 
     # generate model
-    opt = Adam(lr=0.01)
+    opt = Adam(lr=0.001)
     model_original = architecture(conf)
     for layer in model_original.layers:
         layer.trainable = True
@@ -66,12 +67,15 @@ def train_model(conf, architecture=simple, verbose=1, multi_gpu=False, debug=Fal
     # callbacks
     epoch_saliency = GifSaliency(conf, sample, label, gif=False)
     paths = conf["paths"]
-    early_stopping = EarlyStopping(monitor='val_loss', patience=5, verbose=1)
-    model_checkpoint = ModelCheckpoint(paths["model_path"], verbose=1, save_best_only=True)
+    # early_stopping = EarlyStopping(monitor='val_loss', patience=5, verbose=1)
     tensor_board = TensorBoard(log_dir=paths["log_dir_path"], histogram_freq=0)
+    if multi_gpu:
+        model_checkpoint = AltModelCheckpoint(paths["model_path"], model_original, verbose=1, save_best_only=True)
+    else:
+        model_checkpoint = ModelCheckpoint(paths["model_path"], verbose=1, save_best_only=True)
     # cb = [epoch_saliency, early_stopping, model_checkpoint, tensor_board]
     # cb = [early_stopping, model_checkpoint, tensor_board]
-    cb = [early_stopping, tensor_board]
+    cb = [model_checkpoint, tensor_board]
 
     # train
     result = model.fit(x_t, y_t, epochs=epochs, batch_size=batch_size, callbacks=cb,
