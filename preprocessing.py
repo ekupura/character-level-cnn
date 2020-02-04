@@ -4,7 +4,7 @@ import numpy as np
 import codecs
 import re
 import pickle
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, KFold
 from numpy.random import geometric
 import random
 import nltk
@@ -213,8 +213,10 @@ class Sentiment140(PreprocessBase):
             dataset = pd.DataFrame({'text': texts, 'label': labels})
             return dataset
 
-    def preprocess(self, file_name, limit_characters, number_of_characters, aug):
+    def preprocess(self, file_name, limit_characters, number_of_characters, aug, kfold):
+        print("extracting...")
         extracted_dataset = self.common_preprocess_sentiment140(file_name)
+        print("lemmatizing......")
         lemma_dataset = self.lemmatize(extracted_dataset)
         #lemma_dataset = extracted_dataset
 
@@ -239,6 +241,41 @@ class Sentiment140(PreprocessBase):
         re_y_test = self.labels_to_onehot(restricted_test['label'])
 
         return re_x_train, re_x_test, re_y_train, re_y_test
+
+
+    def preprocess_kfold(self, file_name, limit_characters, number_of_characters, aug, k=5):
+        print("extracting...")
+        extracted_dataset = self.common_preprocess_sentiment140(file_name)
+        print("lemmatizing......")
+        lemma_dataset = self.lemmatize(extracted_dataset)
+        #lemma_dataset = extracted_dataset
+
+        x, y = np.array(lemma_dataset["text"]), np.array(lemma_dataset["label"])
+
+        # split
+        x_train_kf, x_test_kf, y_train_kf, y_test_kf = [], [], [], []
+        kf = KFold(n_splits=k, shuffle=True, random_state=0)
+        for i, (train_idx, test_idx) in enumerate(kf.split(x)):
+            print("k fold: {}".format((i)))
+            x_train, x_test = x[train_idx], x[test_idx]
+            y_train, y_test = y[train_idx], y[test_idx]
+            train_set = pd.DataFrame({'text': x_train, 'label': y_train})
+            test_set = pd.DataFrame({'text': x_test, 'label': y_test})
+
+            # train
+            if aug:
+                print("Do augmentation")
+                train_set = self.data_augmentation(train_set, sample_rate=4.0)
+            restricted_train = self.character_restriction(train_set, restriction_rule=r'[^\w!?,\s]')
+            x_train_kf.append(self.texts_to_characters_id_lists(restricted_train['text'], limit_characters))
+            y_train_kf.append(self.labels_to_onehot(restricted_train['label']))
+
+            # test
+            restricted_test = self.character_restriction(test_set, restriction_rule=r'[^\w!?,\s]')
+            x_test_kf.append(self.texts_to_characters_id_lists(restricted_test['text'], limit_characters))
+            y_test_kf.append(self.labels_to_onehot(restricted_test['label']))
+
+        return x_train_kf, x_test_kf, y_train_kf, y_test_kf
 
 
 class IMDB(PreprocessBase):
@@ -297,15 +334,18 @@ class IMDB(PreprocessBase):
 
 
 # preprocess and  dump
-def preprocess_sentiment140(conf, dump=True, aug=False):
+def preprocess_sentiment140(conf, dump=True, aug=False, kfold=False):
     paths, param = conf["paths"], conf["preprocessing_parameters"]
     s140 = Sentiment140()
-    x_train, x_test, y_train, y_test = s140.preprocess(paths["dataset_path"], param["limit_characters"], param['number_of_characters'], aug)
-    if dump:
+    if kfold:
+        x_train, x_test, y_train, y_test = s140.preprocess_kfold(paths["dataset_path"], param["limit_characters"], param['number_of_characters'], aug)
+        for i, (x_tr, x_te, y_tr, y_te) in enumerate(zip(x_train, x_test, y_train, y_test)):
+            with open(paths["preprocessed_path"] + '.{}'.format(i), "wb") as f:
+                pickle.dump({'x_train': x_tr, 'x_test': x_te, 'y_train': y_tr, 'y_test': y_te}, f, protocol=4)
+    else:
+        x_train, x_test, y_train, y_test = s140.preprocess(paths["dataset_path"], param["limit_characters"], param['number_of_characters'], aug)
         with open(paths["preprocessed_path"], "wb") as f:
             pickle.dump({'x_train': x_train, 'x_test': x_test, 'y_train': y_train, 'y_test': y_test}, f, protocol=4)
-    else:
-        return x_train, x_test, y_train, y_test
 
 
 def preprocess_imdb(conf, dump=True, aug=False):

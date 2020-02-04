@@ -6,7 +6,7 @@ import numpy as np
 from keras.models import load_model
 from collections import defaultdict
 from tqdm import tqdm
-from preprocess import id_list_to_characters
+from preprocessing import id_list_to_characters
 from saliency import calculate_saliency, generate_heatmap
 
 

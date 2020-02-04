@@ -2,7 +2,7 @@ from keras.models import load_model
 import yaml
 import pickle
 from copy import deepcopy
-import preprocess
+import preprocessing
 import training
 import architecture
 from saliency import calculate_saliency, generate_animation_heatmap, calculate_saliency_with_vis
@@ -16,16 +16,25 @@ class Main(object):
     def __init__(self):
         pass
 
-    def train(self, conf_path, prep=False, aug=False, multi_gpu=False, debug=False, verbose=1):
+    def preprocess(self, conf_path, aug=False, kfold=False):
+        configuration = self._load_configuration(conf_path)
+        data_type = configuration["preprocessing_parameters"]["architecture"]
+        # select whether to do preprocessing
+        if data_type == 'sentiment140':
+            preprocessing.preprocess_sentiment140(configuration, dump=True, aug=aug, kfold=kfold)
+        else:
+            preprocessing.preprocess_imdb(configuration, dump=True, aug=aug)
+
+    def train(self, conf_path, prep=False, aug=False, kfold=False, multi_gpu=False, debug=False, verbose=1):
         configuration = self._load_configuration(conf_path)
         model = configuration["model_parameters"]["architecture"]
         data_type = configuration["preprocessing_parameters"]["architecture"]
         # select whether to do preprocessing
         if prep:
             if data_type == 'sentiment140':
-                preprocess.preprocess_sentiment140(configuration, dump=True, aug=aug)
+                preprocessing.preprocess_sentiment140(configuration, dump=True, aug=aug, kfold=kfold)
             else:
-                preprocess.preprocess_imdb(configuration, dump=True, aug=aug)
+                preprocessing.preprocess_imdb(configuration, dump=True, aug=aug)
 
         # select model architecture
         if model == 'two':
@@ -43,7 +52,10 @@ class Main(object):
         else:
             archi = simple
         # select whether to generate saliency map
-        training.train_model(configuration, archi, verbose, multi_gpu, debug)
+        if kfold:
+            training.train_model_kfold(configuration, archi, verbose, multi_gpu, debug)
+        else:
+            training.train_model(configuration, archi, verbose, multi_gpu, debug)
 
     def generate_saliency_gif(self, configuration_path):
         configuration = self._load_configuration(configuration_path)

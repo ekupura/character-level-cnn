@@ -9,7 +9,7 @@ from keras.utils import np_utils
 from matplotlib import pyplot as plt
 import matplotlib
 from layer import CharacterEmbeddingLayer
-from preprocess import id_list_to_characters
+from preprocessing import id_list_to_characters
 from matplotlib import animation
 from tqdm import tqdm
 
