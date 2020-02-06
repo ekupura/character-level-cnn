@@ -9,7 +9,7 @@ from tqdm import tqdm
 from preprocessing import id_list_to_characters
 from saliency import calculate_saliency, generate_heatmap
 import time
-
+import random
 
 class Evaluation:
     def __init__(self):
@@ -45,6 +45,9 @@ class Evaluation:
         with open(path, 'rb') as f:
             dataset = pickle.load(f)
         x_test, y_test = dataset['x_test'], dataset['y_test']
+        random.seed(0)
+        shuffle_idx = random.sample(range(len(dataset['x_test'])), len(dataset['x_test']))
+        x_test, y_test = x_test[shuffle_idx], y_test[shuffle_idx]
         # layer_dict = {'CharacterEmbeddingLayer': CharacterEmbeddingLayer}
         model = load_model(configuration['paths']['model_path'])
 

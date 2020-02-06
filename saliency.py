@@ -51,8 +51,9 @@ def calculate_saliency(conf, sample, label, model=None):
     matrix = saliency.get_mask(sample)
     if matrix is None:
         matrix = np.zeros((160, 67))
-    matrix[matrix < 0.0] = 0.0
-    return np.mean((matrix.reshape(160, 67)), axis=1)
+    heatmap = np.mean((matrix.reshape(160, 67)), axis=1)
+    heatmap[heatmap < 0.0] = 0.0
+    return heatmap
 
 def calculate_saliency_multi(conf, samples, labels, model):
     limit_characters = conf['preprocessing_parameters']['limit_characters']
