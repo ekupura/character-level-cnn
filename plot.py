@@ -29,9 +29,7 @@ def test_accuracy(confs):
         print('Test accuracy:', score[1])
 
 
-def plot_train_loss_and_acc(conf_path):
-    with open(conf_path, 'r') as f:
-        conf = yaml.load(f)
+def plot_train_loss_and_acc(conf):
     log_path = conf["paths"]["log_dir_path"]
     with open(log_path + "result.pkl", "rb") as f:
         results = pickle.load(f)

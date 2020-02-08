@@ -10,6 +10,7 @@ from copy import deepcopy
 import random
 from keras.utils.training_utils import multi_gpu_model
 from pprint import pprint
+from plot import plot_train_loss_and_acc
 from alt_model_checkpoint.keras import AltModelCheckpoint
 
 
@@ -86,6 +87,7 @@ def train_model(conf, architecture=simple, verbose=1, multi_gpu=False, debug=Fal
 
     print("\n" + "===============================================================================" * 2)
     pprint(result.history)
+    plot_train_loss_and_acc(conf)
     # test
     x_test = x_test.reshape(*x_test.shape, 1)
     score_train = model_original.evaluate(x=x_t, y=y_t, batch_size=1024, verbose=verbose)
