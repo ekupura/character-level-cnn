@@ -13,6 +13,7 @@ from layer import CharacterEmbeddingLayer
 import time
 
 
+
 class Main(object):
     def __init__(self):
         pass

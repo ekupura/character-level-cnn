@@ -120,6 +120,44 @@ def generate_heatmap(conf, saliency, id_list, epoch=None, path=None, z_norm=Fals
     plt.close(f)
 
 
+def generate_heatmap_wordlevel(conf, saliency, id_list, epoch=None, path=None, z_norm=False):
+    # preprocess
+    if z_norm:
+        saliency[saliency < 0.0] = 0.0
+        saliency = zscore(saliency.reshape(16, 10))
+    else:
+        saliency = saliency.reshape[:150]
+    text = id_list_to_characters(id_list)
+    separater_indice = [0] + list(np.where(text == " "))
+    word_level_saliency = []
+    for i in range(len(separater_indice) - 1):
+        s = np.max(saliency[separater_indice[i] + 1, separater_indice[i+1]])
+        word_level_saliency.append(s)
+
+    saliency = np.array(word_level_saliency).reshape(1, len(word_level_saliency))
+    text = text.split(" ")
+
+    f = plt.figure(figsize=(7, 5))
+
+    # configure figure elements
+    orig_cmap = matplotlib.cm.Oranges
+    _max = np.max(saliency) * 1.5
+    plt.imshow(saliency, interpolation='nearest', cmap=orig_cmap, vmax=_max, vmin=0.0)
+
+    ys, xs = np.meshgrid(range(saliency.shape[0]), range(saliency.shape[1]), indexing='ij')
+    for (x, y, c) in zip(xs.flatten(), ys.flatten(), text):
+        plt.text(x, y, c, horizontalalignment='center', verticalalignment='center', )
+
+    #plt.colorbar()
+    # save figure
+    if path is None:
+        path = conf['paths']['saliency_path']
+    print(path)
+    plt.savefig(path)
+
+    f.clear()
+    plt.close(f)
+
 # generate one gif image
 def generate_animation_heatmap(conf, case, saliency_list, id_list, label='', sm=False):
     # preprocess
