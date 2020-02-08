@@ -51,8 +51,8 @@ def calculate_saliency(conf, sample, label, model=None):
     matrix = saliency.get_mask(sample)
     if matrix is None:
         matrix = np.zeros((160, 67))
-    heatmap = np.mean((matrix.reshape(160, 67)), axis=1)
-    heatmap[heatmap < 0.0] = 0.0
+    heatmap = np.mean(np.abs(matrix.reshape(160, 67)), axis=1)
+    #heatmap[heatmap < 0.0] = 0.0
     return heatmap
 
 def calculate_saliency_multi(conf, samples, labels, model):
@@ -94,28 +94,22 @@ def generate_heatmap(conf, saliency, id_list, epoch=None, path=None, z_norm=Fals
         saliency[saliency < 0.0] = 0.0
         saliency = zscore(saliency.reshape(16, 10))
     else:
-        saliency = (saliency.reshape(16, 10))
+        saliency = saliency.reshape[:150]
+        saliency = (saliency.reshape(15, 10))
     text = id_list_to_characters(id_list)
 
     f = plt.figure(figsize=(7, 5))
 
     # configure figure elements
     orig_cmap = matplotlib.cm.Oranges
-    _max = np.max(saliency) * 1.414
+    _max = np.max(saliency) * 1.5
     plt.imshow(saliency, interpolation='nearest', cmap=orig_cmap, vmax=_max, vmin=0.0)
 
     ys, xs = np.meshgrid(range(saliency.shape[0]), range(saliency.shape[1]), indexing='ij')
     for (x, y, c) in zip(xs.flatten(), ys.flatten(), text):
         plt.text(x, y, c, horizontalalignment='center', verticalalignment='center', )
 
-    if epoch is None:
-        plt.title(conf["experiment_name"])
-    else:
-        plt.title("{},label={}".format(conf["experiment_name"], epoch))
-
-
     #plt.colorbar()
-
     # save figure
     if path is None:
         path = conf['paths']['saliency_path']
