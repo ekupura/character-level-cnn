@@ -51,8 +51,8 @@ def calculate_saliency(conf, sample, label, model=None):
     matrix = saliency.get_mask(sample)
     if matrix is None:
         matrix = np.zeros((160, 67))
-    heatmap = np.mean(np.abs(matrix.reshape(160, 67)), axis=1)
-    #heatmap[heatmap < 0.0] = 0.0
+    heatmap = np.mean((matrix.reshape(160, 67)), axis=1)
+    heatmap[heatmap < 0.0] = 0.0
     return heatmap
 
 def calculate_saliency_multi(conf, samples, labels, model):
@@ -90,12 +90,8 @@ def calculate_saliency_with_vis(conf, sample, label, model=None):
 
 def generate_heatmap(conf, saliency, id_list, epoch=None, path=None, z_norm=False):
     # preprocess
-    if z_norm:
-        saliency[saliency < 0.0] = 0.0
-        saliency = zscore(saliency.reshape(16, 10))
-    else:
-        saliency = saliency.reshape[:150]
-        saliency = (saliency.reshape(15, 10))
+    saliency = saliency[:150]
+    saliency = (saliency.reshape(15, 10))
     text = id_list_to_characters(id_list)
 
     f = plt.figure(figsize=(7, 5))
