@@ -300,8 +300,9 @@ def character_level_cnn_bilstm(conf):
 
     # input layer
     inputs = Input(shape=(limit_characters, 1), dtype='int32')
-    l1 = Lambda(lambda x: K.one_hot(K.cast(x, "int32"), num_classes=number_of_characters))(inputs)
-    x = Reshape(target_shape=(limit_characters, number_of_characters), name='start')(l1)
+    l = Lambda(lambda x: K.one_hot(K.cast(x, "int32"), num_classes=number_of_characters))(inputs)
+    l = Lambda(lambda x: K.reverse(x, axes=0))(l)
+    x = Reshape(target_shape=(limit_characters, number_of_characters), name='start')(l)
 
 
     # convolution
