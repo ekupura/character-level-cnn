@@ -294,6 +294,8 @@ def character_level_cnn_bilstm(conf):
     use_bn = [True for i in range(len(convolution_widths))] if "use_bn" not in model_param else model_param["use_bn"]
     cnn_regularizer = l2(1e-7) if "cnn_regularizer" not in model_param else l2(model_param["cnn_regularizer"])
     lstm_regularizer = l2(1e-6) if "lstm_regularizer" not in model_param else l2(model_param["lstm_regularizer"])
+    cnn_dropout_rate = 0.00 if "dropout_rate" not in model_param else model_param["cnn_dropout_rate"]
+    lstm_dropout_rate = 0.00 if "dropout_rate" not in model_param else model_param["lstm_dropout_rate"]
     params = {'conv_w': convolution_widths, 'fil_s': filter_sizes, 'pool_s': pooling_sizes, "use_bn": use_bn,
               "cnn_reg": cnn_regularizer.l2, "lstm_reg": lstm_regularizer.l2}
     pprint(params)
@@ -308,21 +310,24 @@ def character_level_cnn_bilstm(conf):
     # convolution
     for i in range(len(convolution_widths)):
         x = Conv1D(filters=filter_sizes[i], kernel_size=convolution_widths[i],
-                   padding='same', activation='relu',
+                   padding='same', activation='linear',
                    kernel_regularizer=cnn_regularizer, bias_regularizer=cnn_regularizer)(x)
-        if pooling_sizes[i] > 1:
-            x = MaxPooling1D(pool_size=pooling_sizes[i], padding='valid')(x)
         if use_bn[i]:
             x = BatchNormalization()(x)
+        x = Activation('relu')(x)
+        if pooling_sizes[i] > 1:
+            x = MaxPooling1D(pool_size=pooling_sizes[i], padding='valid')(x)
+        if cnn_dropout_rate > 0.00:
+            x = Dropout(cnn_dropout_rate)(x)
 
     # bilstm
     lstm_size = 128 if "lstm_size" not in model_param else model_param["lstm_size"]
     # x = Bidirectional(LSTM(lstm_size, kernel_regularizer=lstm_regularizer, bias_regularizer=lstm_regularizer))(x)
-    x = LSTM(lstm_size, kernel_regularizer=lstm_regularizer, bias_regularizer=lstm_regularizer)(x)
+    x = LSTM(lstm_size, kernel_regularizer=lstm_regularizer, bias_regularizer=lstm_regularizer, dropout=lstm_dropout_rate)(x)
     x = BatchNormalization()(x)
-    x = LSTM(lstm_size, kernel_regularizer=lstm_regularizer, bias_regularizer=lstm_regularizer)(x)
+    x = LSTM(lstm_size, kernel_regularizer=lstm_regularizer, bias_regularizer=lstm_regularizer, dropout=lstm_dropout_rate)(x)
     x = BatchNormalization()(x)
-    x = LSTM(lstm_size, kernel_regularizer=lstm_regularizer, bias_regularizer=lstm_regularizer)(x)
+    x = LSTM(lstm_size, kernel_regularizer=lstm_regularizer, bias_regularizer=lstm_regularizer, dropout=lstm_dropout_rate)(x)
     x = BatchNormalization()(x)
     prediction = Dense(2, activation='softmax', name='final')(x)
 
