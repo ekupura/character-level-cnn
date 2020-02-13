@@ -301,7 +301,6 @@ def character_level_cnn_bilstm(conf):
     # input layer
     inputs = Input(shape=(limit_characters, 1), dtype='int32')
     l = Lambda(lambda x: K.one_hot(K.cast(x, "int32"), num_classes=number_of_characters))(inputs)
-    l = Lambda(lambda x: K.reverse(x, axes=0))(l)
     x = Reshape(target_shape=(limit_characters, number_of_characters), name='start')(l)
 
 
@@ -318,9 +317,9 @@ def character_level_cnn_bilstm(conf):
     # bilstm
     lstm_size = 128 if "lstm_size" not in model_param else model_param["lstm_size"]
     # x = Bidirectional(LSTM(lstm_size, kernel_regularizer=lstm_regularizer, bias_regularizer=lstm_regularizer))(x)
-    x = LSTM(lstm_size, kernel_regularizer=lstm_regularizer, bias_regularizer=lstm_regularizer)(x)
+    x = LSTM(lstm_size, kernel_regularizer=lstm_regularizer, bias_regularizer=lstm_regularizer, go_backwards=True, return_sequences=True)(x)
     x = BatchNormalization()(x)
-    x = LSTM(lstm_size, kernel_regularizer=lstm_regularizer, bias_regularizer=lstm_regularizer)(x)
+    x = LSTM(lstm_size, kernel_regularizer=lstm_regularizer, bias_regularizer=lstm_regularizer, return_sequences=True)(x)
     x = BatchNormalization()(x)
     x = LSTM(lstm_size, kernel_regularizer=lstm_regularizer, bias_regularizer=lstm_regularizer)(x)
     x = BatchNormalization()(x)

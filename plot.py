@@ -51,7 +51,7 @@ def plot_train_loss_and_acc(conf):
     f = plt.figure()
     x = np.arange(epochs)
     plt.xlim(0, epochs)
-    plt.ylim(0.65, 0.85)
+    plt.ylim(0.6, 1.0)
     plt.xlabel("epoch")
     plt.ylabel("accuracy")
     y = results["acc"]
