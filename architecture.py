@@ -395,6 +395,8 @@ def character_level_cnn_serial(conf):
     dense_size = model_param["dense_size"]
     use_bn = [True for i in range(len(convolution_widths))] if "use_bn" not in model_param else model_param["use_bn"]
     cnn_regularizer = l2(1e-7) if "cnn_regularizer" not in model_param else l2(model_param["cnn_regularizer"])
+    cnn_dropout_rate = 0.00 if "cnn_dropout_rate" not in model_param else model_param["cnn_dropout_rate"]
+    dense_dropout_rate = 0.00 if "dense_dropout_rate" not in model_param else model_param["dense_dropout_rate"]
     params = {'conv_w': convolution_widths, 'fil_s': filter_sizes, 'pool_s': pooling_sizes, "use_bn": use_bn,
               "cnn_reg": cnn_regularizer.l2}
     pprint(params)
@@ -402,18 +404,23 @@ def character_level_cnn_serial(conf):
     # convolution
     for i in range(len(convolution_widths)):
         x = Conv1D(filters=filter_sizes[i], kernel_size=convolution_widths[i],
-                   padding='same', activation='relu',
+                   padding='same', activation='linear',
                    kernel_regularizer=cnn_regularizer, bias_regularizer=cnn_regularizer)(x)
-        if pooling_sizes[i] > 1:
-            x = MaxPooling1D(pool_size=pooling_sizes[i], padding='valid')(x)
         if use_bn[i]:
             x = BatchNormalization()(x)
+        x = Activation('relu')(x)
+        if pooling_sizes[i] > 1:
+            x = MaxPooling1D(pool_size=pooling_sizes[i], padding='valid')(x)
+        if cnn_dropout_rate > 0.00:
+            x = Dropout(cnn_dropout_rate)(x)
 
     # dense
     x = Flatten()(x)
     for i in range(3):
         x = Dense(dense_size, activation='relu', kernel_regularizer=l2(0.01), bias_regularizer=l2(0.01))(x)
         x = BatchNormalization()(x)
+        if dense_dropout_rate > 0.00:
+            x = Dropout(dense_dropout_rate)(x)
     prediction = Dense(2, activation='softmax', name='final')(x)
 
     return Model(input=inputs, output=prediction)
