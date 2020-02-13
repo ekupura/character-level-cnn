@@ -294,8 +294,8 @@ def character_level_cnn_bilstm(conf):
     use_bn = [True for i in range(len(convolution_widths))] if "use_bn" not in model_param else model_param["use_bn"]
     cnn_regularizer = l2(1e-7) if "cnn_regularizer" not in model_param else l2(model_param["cnn_regularizer"])
     lstm_regularizer = l2(1e-6) if "lstm_regularizer" not in model_param else l2(model_param["lstm_regularizer"])
-    cnn_dropout_rate = 0.00 if "dropout_rate" not in model_param else model_param["cnn_dropout_rate"]
-    lstm_dropout_rate = 0.00 if "dropout_rate" not in model_param else model_param["lstm_dropout_rate"]
+    cnn_dropout_rate = 0.00 if "cnn_dropout_rate" not in model_param else model_param["cnn_dropout_rate"]
+    lstm_dropout_rate = 0.00 if "lstm_dropout_rate" not in model_param else model_param["lstm_dropout_rate"]
     params = {'conv_w': convolution_widths, 'fil_s': filter_sizes, 'pool_s': pooling_sizes, "use_bn": use_bn,
               "cnn_reg": cnn_regularizer.l2, "lstm_reg": lstm_regularizer.l2}
     pprint(params)
