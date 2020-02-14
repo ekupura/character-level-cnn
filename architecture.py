@@ -323,7 +323,7 @@ def character_level_cnn_bilstm(conf):
     lstm_size = 128 if "lstm_size" not in model_param else model_param["lstm_size"]
     # x = Bidirectional(LSTM(lstm_size, kernel_regularizer=lstm_regularizer, bias_regularizer=lstm_regularizer))(x)
     x = LSTM(lstm_size, kernel_regularizer=lstm_regularizer, bias_regularizer=lstm_regularizer,
-             dropout=lstm_dropout_rate, return_sequences=True)(x)
+             dropout=lstm_dropout_rate, return_sequences=True, go_backwards=True)(x)
     x = BatchNormalization()(x)
     x = LSTM(lstm_size, kernel_regularizer=lstm_regularizer, bias_regularizer=lstm_regularizer,
              dropout=lstm_dropout_rate, return_sequences=True)(x)
